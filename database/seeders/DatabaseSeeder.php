@@ -41,6 +41,9 @@ class DatabaseSeeder extends Seeder
         AgnoAcademicoCursoSeeder::class,
         DepartamentoProgFormSeeder::class,
         DecanoSeeder::class,
+        CurriculoSeeder::class,
+        PlanEstudioProgFormSeeder::class,
+        DisciplinaSeeder::class,
     ]);
     }
 }
