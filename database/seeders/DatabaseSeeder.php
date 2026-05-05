@@ -53,10 +53,17 @@ class DatabaseSeeder extends Seeder
         EstudianteTDPPSeeder::class,
         GradoTituloSeeder::class,
         ProfesorSeeder::class,
-       MiembroDepartamentoSeeder::class,
+        MiembroDepartamentoSeeder::class,
         DecanoSeeder::class,
         JefeDepartamentoSeeder::class,
         ProfesorGuiaSeeder::class,
+        PlanEstudioSeeder::class,
+        PlanEstudioProgFormSeeder::class,
+        CurriculoSeeder::class,
+        DisciplinaSeeder::class,
+        DisciplinaAsignaturaSeeder::class,
+        AsignaturaAgnoSeeder::class,
+
     ]);
     }
 }
