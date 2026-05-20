@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Disciplina extends Model
 {
@@ -17,4 +18,24 @@ class Disciplina extends Model
         'created_at',
         'updated_at'
     ];
+
+    public function curriculos(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Curriculo::class,
+            'curriculo_disciplina',
+            'id_disciplina',
+            'id_curriculo'
+        );
+    }
+
+    public function asignaturas(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Asignatura::class,
+            'disciplina_asignatura',
+            'id_disciplina',
+            'id_asignatura'
+        );
+    }
 }
