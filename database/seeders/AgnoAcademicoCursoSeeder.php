@@ -3,152 +3,41 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\AgnoAcademico_Curso;
+use App\Models\AnoAcademico;
+use App\Models\Curso;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class AgnoAcademicoCursoSeeder extends Seeder
 {
     public function run(): void
     {
-        AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 1,
-            'id_a_academico' => 1,
-            'id_cohorte' => 1
+        $cohorteId = DB::table('cohorte')->value('id');
 
-        ]);
-        AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 1,
-            'id_a_academico' => 2,
-            'id_cohorte' => 1
+        if (!$cohorteId) {
+            return;
+        }
 
-        ]);
-        AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 2,
-            'id_a_academico' => 3,
-            'id_cohorte' => 1
+        DB::table('a_academico_curso')->delete();
 
-        ]);
-        AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 3,
-            'id_a_academico' => 4,
-            'id_cohorte' => 1
+        $now = now();
+        $registros = [];
 
-        ]);
-        AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 4,
-            'id_a_academico' => 5,
-            'id_cohorte' => 1
+        foreach (AnoAcademico::query()->pluck('id') as $anoAcademicoId) {
+            foreach (Curso::query()->pluck('id') as $cursoId) {
+                $registros[] = [
+                    'id' => (string) Str::uuid(),
+                    'id_a_academico' => $anoAcademicoId,
+                    'id_curso' => $cursoId,
+                    'id_cohorte' => $cohorteId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+        }
 
-        ]);
-         AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 6,
-            'id_a_academico' => 6,
-            'id_cohorte' => 1
-
-        ]);
-         AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 5,
-            'id_a_academico' => 7,
-            'id_cohorte' => 1
-
-        ]);
-         AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 4,
-            'id_a_academico' => 8,
-            'id_cohorte' => 1
-
-        ]);
-         AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 4,
-            'id_a_academico' => 9,
-            'id_cohorte' => 1
-
-        ]);
-         AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 4,
-            'id_a_academico' => 10,
-            'id_cohorte' => 1
-
-        ]);
-         AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 4,
-            'id_a_academico' => 11,
-            'id_cohorte' => 1
-
-        ]);
-         AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 4,
-            'id_a_academico' => 12,
-            'id_cohorte' => 1
-
-        ]);
-         AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 4,
-            'id_a_academico' => 13,
-            'id_cohorte' => 1
-
-        ]);
-         AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 4,
-            'id_a_academico' => 14,
-            'id_cohorte' => 1
-
-        ]);
-         AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 4,
-            'id_a_academico' => 15,
-            'id_cohorte' => 1
-
-        ]);
-         AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 4,
-            'id_a_academico' => 16,
-            'id_cohorte' => 1
-
-        ]);
-         AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 4,
-            'id_a_academico' => 17,
-            'id_cohorte' => 1
-
-        ]);
-         AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 4,
-            'id_a_academico' => 18,
-            'id_cohorte' => 1
-
-        ]);
-         AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 4,
-            'id_a_academico' => 19,
-            'id_cohorte' => 1
-
-        ]);
-         AgnoAcademico_Curso::create([
-            'id' => Str::uuid(),
-            'id_curso' => 4,
-            'id_a_academico' => 20,
-            'id_cohorte' => 1
-
-        ]);
+        foreach (array_chunk($registros, 500) as $chunk) {
+            DB::table('a_academico_curso')->insert($chunk);
+        }
     }
 }

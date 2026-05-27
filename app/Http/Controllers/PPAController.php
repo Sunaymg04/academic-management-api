@@ -21,6 +21,7 @@ use PhpOffice\PhpWord\Shared\Html;
 use Carbon\Carbon;
 use App\Models\Decano;
 use App\Models\Documento;
+use App\Models\ResolucionConfiguracion;
 use Illuminate\Support\Facades\Storage;
 use app\Models\Departamento;
 use app\Models\MiembroDepartamento;
@@ -29,6 +30,27 @@ class PPAController extends Controller
     // 🟢 DESIGNAR
   public function designar(Request $request)
 {
+    $fechaAccion = now();
+    $cursoAccion = $this->courseForActionDate($fechaAccion);
+
+    if (!$cursoAccion) {
+        return $this->courseErrorForActionDate($fechaAccion);
+    }
+
+    $request->validate([
+        'id_profesor' => 'required|exists:profesor,id',
+        'id_a_academico' => 'required|exists:a_academico,id',
+        'id_curso' => 'nullable|integer|exists:curso,id',
+    ]);
+
+    if ($request->filled('id_curso') && (int) $request->id_curso !== (int) $cursoAccion->id) {
+        return response()->json([
+            'error' => 'El PPA debe designarse en el curso académico presente.',
+            'id_curso_presente' => $cursoAccion->id,
+            'curso_presente' => $cursoAccion->curso,
+        ], 422);
+    }
+
      $profesor = Profesor::find($request->id_profesor);
     // 🟡 VALIDAR PROFESOR
     if (!Profesor::where('id', $request->id_profesor)->exists()) {
@@ -80,42 +102,15 @@ if (!$carrera) {
 }
 
 
-// 🔹 validar por carrera
-$existeCarrera = PPA::where('id_a_academico', $request->id_a_academico)
-    ->exists();
+    $ppaExistente = PPA::where('id_curso', $cursoAccion->id)
+        ->where('id_a_academico', $request->id_a_academico)
+        ->first();
 
-if ($existeCarrera) {
-    return response()->json([
-        'error' => 'Ya existe un PPA para ese ano académico'
-    ], 400);
-}
-
-// 🔹 validar profesor duplicado
-$existeProfesor = PPA::where('id_profesor', $request->id_profesor)
-    ->where('id_a_academico', $request->id_a_academico)
-    ->exists();
-
-if ($existeProfesor) {
-    return response()->json([
-        'error' => 'El profesor ya está designado'
-    ], 400);
-}
-    $existe = PPA::where('id_curso', $request->id_curso)
-    ->where('id_a_academico', $request->id_a_academico)
-    ->exists();
-
-if ($existe) {
-    return response()->json([
-        'error' => 'Ya existe un PPA asignado para ese curso en ese ano académico'
-    ], 400);
-}
-    // 🟡 VALIDAR CURSO
-    if (!Curso::where('id', $request->id_curso)->exists()) {
+    if ($ppaExistente && (int) $ppaExistente->id_profesor !== (int) $request->id_profesor) {
         return response()->json([
-            'error' => 'El curso no existe'
+            'error' => 'Ya existe otro PPA asignado para ese curso en ese ano académico'
         ], 400);
     }
-
     // 🟡 VALIDAR ANO ACADÉMICO
     if (!AnoAcademico::where('id', $request->id_a_academico)->exists()) {
         return response()->json([
@@ -124,7 +119,7 @@ if ($existe) {
     }
 
     // 🟢 VALIDACIÓN PRINCIPAL (curso pertenece al ano)
-    $valido = AgnoAcademico_Curso::where('id_curso', $request->id_curso)
+    $valido = AgnoAcademico_Curso::where('id_curso', $cursoAccion->id)
         ->where('id_a_academico', $request->id_a_academico)
         ->exists();
 
@@ -134,21 +129,19 @@ if ($existe) {
         ], 400);
     }
 
-    // ✅ CREAR PPA
-    $ppa = PPA::create([
+    $ppa = $ppaExistente ?: PPA::create([
         'id_profesor' => $request->id_profesor,
         'id_a_academico' => $request->id_a_academico,
-        'id_curso' => $request->id_curso
+        'id_curso' => $cursoAccion->id
     ]);
 
-    // ✅ HISTORIAL
-    PpaHistorial::create([
-        'id_profesor' => $request->id_profesor,
-        'id_a_academico' => $request->id_a_academico,
-        'id_curso' => $request->id_curso,
-        'accion' => 'designado',
-        'fecha_accion' => now()
-    ]);
+    $this->guardarAccionPpa(
+        $request->id_profesor,
+        $request->id_a_academico,
+        $cursoAccion->id,
+        'designado',
+        $fechaAccion
+    );
 
 
 $profesor = Profesor::find($request->id_profesor);
@@ -178,19 +171,50 @@ LogController::registrar(
     $descripcion
 );
 
-return response()->json($ppa);
+return response()->json($ppa->fresh('curso'));
 }
 
     // 🔵 RATIFICAR
     public function ratificar(Request $request)
 {
-    PpaHistorial::create([
-        'id_profesor' => $request->id_profesor,
-        'id_a_academico' => $request->id_a_academico,
-        'id_curso' => $request->id_curso,
-        'accion' => 'ratificado',
-        'fecha_accion' => now()
-    ]);
+    $fechaAccion = now();
+    $cursoAccion = $this->courseForActionDate($fechaAccion);
+
+    if (!$cursoAccion) {
+        return $this->courseErrorForActionDate($fechaAccion);
+    }
+
+    if (!$this->puedeAccionarPpa($request->id_profesor, $request->id_a_academico, $cursoAccion->id)) {
+        return response()->json([
+            'error' => 'Solo se puede ratificar un PPA designado en cursos anteriores o con acción previa en este curso.'
+        ], 400);
+    }
+
+    $ppaExistente = PPA::where('id_curso', $cursoAccion->id)
+        ->where('id_a_academico', $request->id_a_academico)
+        ->first();
+
+    if ($ppaExistente && (int) $ppaExistente->id_profesor !== (int) $request->id_profesor) {
+        return response()->json([
+            'error' => 'Ya existe otro PPA asignado para ese curso en ese ano académico'
+        ], 400);
+    }
+
+    if (!$ppaExistente) {
+        PPA::create([
+            'id_profesor' => $request->id_profesor,
+            'id_a_academico' => $request->id_a_academico,
+            'id_curso' => $cursoAccion->id
+        ]);
+    }
+
+    $this->guardarAccionPpa(
+        $request->id_profesor,
+        $request->id_a_academico,
+        $cursoAccion->id,
+        'ratificado',
+        $fechaAccion
+    );
 
     // 🔥 MOVER TODO ESTO ARRIBA
     $ano = AnoAcademico::find($request->id_a_academico);
@@ -214,26 +238,35 @@ return response()->json($ppa);
     // 🔴 DESNOMBRAR
   public function desnombrar(Request $request)
 {
+    $fechaAccion = now();
+    $cursoAccion = $this->courseForActionDate($fechaAccion);
+
+    if (!$cursoAccion) {
+        return $this->courseErrorForActionDate($fechaAccion);
+    }
+
+    if (!$this->puedeAccionarPpa($request->id_profesor, $request->id_a_academico, $cursoAccion->id)) {
+        return response()->json([
+            'error' => 'Solo se puede desnombrar un PPA designado o ratificado en cursos anteriores o con acción previa en este curso.'
+        ], 400);
+    }
+
     $ppa = PPA::where('id_profesor', $request->id_profesor)
-        ->where('id_curso', $request->id_curso)
+        ->where('id_curso', $cursoAccion->id)
         ->where('id_a_academico', $request->id_a_academico)
         ->first();
 
-    if (!$ppa) {
-        return response()->json([
-            'error' => 'No existe PPA activo'
-        ], 404);
+    if ($ppa) {
+        $ppa->delete();
     }
 
-    $ppa->delete();
-
-    PpaHistorial::create([
-        'id_profesor' => $request->id_profesor,
-        'id_a_academico' => $request->id_a_academico,
-        'id_curso' => $request->id_curso,
-        'accion' => 'desnombrado',
-        'fecha_accion' => now()
-    ]);
+    $this->guardarAccionPpa(
+        $request->id_profesor,
+        $request->id_a_academico,
+        $cursoAccion->id,
+        'desnombrado',
+        $fechaAccion
+    );
 
     // 🔥 LOG ANTES DEL RETURN
     $ano = AnoAcademico::find($request->id_a_academico);
@@ -254,11 +287,58 @@ return response()->json($ppa);
         'message' => 'PPA eliminado correctamente'
     ]);
 }
+
+private function guardarAccionPpa(int $profesorId, int $anoAcademicoId, int $cursoId, string $accion, $fechaAccion): PpaHistorial
+{
+    $query = PpaHistorial::where('id_profesor', $profesorId)
+        ->where('id_a_academico', $anoAcademicoId)
+        ->where('id_curso', $cursoId);
+
+    $historial = $query->orderBy('id')->first();
+
+    if ($historial) {
+        $query->where('id', '<>', $historial->id)->delete();
+        $historial->update([
+            'accion' => $accion,
+            'fecha_accion' => $fechaAccion,
+        ]);
+
+        return $historial;
+    }
+
+    return PpaHistorial::create([
+        'id_profesor' => $profesorId,
+        'id_a_academico' => $anoAcademicoId,
+        'id_curso' => $cursoId,
+        'accion' => $accion,
+        'fecha_accion' => $fechaAccion,
+    ]);
+}
+
+private function puedeAccionarPpa(int $profesorId, int $anoAcademicoId, int $cursoId): bool
+{
+    $mismaAccionCurso = PpaHistorial::where('id_profesor', $profesorId)
+        ->where('id_a_academico', $anoAcademicoId)
+        ->where('id_curso', $cursoId)
+        ->exists();
+
+    if ($mismaAccionCurso) {
+        return true;
+    }
+
+    return PpaHistorial::where('id_profesor', $profesorId)
+        ->where('id_a_academico', $anoAcademicoId)
+        ->where('id_curso', '<', $cursoId)
+        ->whereIn('accion', ['designado', 'ratificado'])
+        ->exists();
+}
+
 public function index()
 {
     $ppa = PPA::with([
         'profesor.catDocente',
-        'profesor.catCientifica'
+        'profesor.catCientifica',
+        'curso'
     ])->get();
 
     return response()->json(
@@ -289,6 +369,7 @@ $departamento = DB::table('departamento_prog_d_form')
 
                 // 🔥 ESTO YA LO TENÍAS (NO SE TOCA)
                 'id_curso' => $item->id_curso,
+                'curso' => $item->curso->curso ?? null,
                 'id_a_academico' => $item->id_a_academico,
 
                 // ✅ NUEVO (LO QUE QUIERES MOSTRAR)
@@ -297,6 +378,70 @@ $departamento = DB::table('departamento_prog_d_form')
                 'anio' => $anio->identificador ?? ''
             ];
         })
+    );
+}
+
+public function historialPorCurso(Request $request)
+{
+    $facultadId = $this->documentFacultyId();
+    $departamentoId = $this->documentDepartmentId();
+    $cursoId = $request->query('id_curso') ?? $request->query('curso_id');
+
+    $query = DB::table('ppa_historial as ph')
+        ->join('profesor as p', 'ph.id_profesor', '=', 'p.id')
+        ->leftJoin('categoria_docente as cd', 'p.idCatDocente', '=', 'cd.id')
+        ->leftJoin('categoria_cientifica as cc', 'p.idCatCientifica', '=', 'cc.id')
+        ->leftJoin('curso as c', 'ph.id_curso', '=', 'c.id')
+        ->leftJoin('a_academico as a', 'ph.id_a_academico', '=', 'a.id')
+        ->leftJoin('programa_de_formacion as pf', 'a.id_prog_form', '=', 'pf.id')
+        ->leftJoin('departamento_prog_d_form as dpf', 'pf.id', '=', 'dpf.id_prog_form')
+        ->leftJoin('departamento as d', 'dpf.id_departamento', '=', 'd.id')
+        ->leftJoin('facultad_departamento as fd', 'd.id', '=', 'fd.id_departamento')
+        ->leftJoin('ppa as ppa_actual', function ($join) {
+            $join->on('ppa_actual.id_profesor', '=', 'ph.id_profesor')
+                ->on('ppa_actual.id_a_academico', '=', 'ph.id_a_academico')
+                ->on('ppa_actual.id_curso', '=', 'ph.id_curso');
+        });
+
+    if ($cursoId) {
+        $query->where('ph.id_curso', $cursoId);
+    }
+
+    if ($departamentoId) {
+        $query->where('d.id', $departamentoId);
+    } elseif ($facultadId) {
+        $query->where('fd.id_facultad', $facultadId);
+    }
+
+    return response()->json(
+        $query
+            ->orderByDesc('ph.id_curso')
+            ->orderBy('pf.nombre')
+            ->orderBy('a.identificador')
+            ->orderBy('p.apellidos')
+            ->select(
+                'ph.id',
+                'ph.id_profesor',
+                'ph.id_curso',
+                'c.curso',
+                'ph.id_a_academico',
+                'a.identificador as anio',
+                'p.nombre',
+                'p.apellidos',
+                DB::raw("CONCAT(p.nombre, ' ', p.apellidos) as nombre_completo"),
+                'cd.nombre as catDocente',
+                'cc.nombre as catCientifica',
+                'pf.id as carrera_id',
+                'pf.nombre as carrera',
+                'd.id as departamento_id',
+                'd.nombre as departamento',
+                'fd.id_facultad',
+                'ph.accion',
+                'ph.fecha_accion',
+                DB::raw('ppa_actual.uuid is not null as habilitado')
+            )
+            ->distinct()
+            ->get()
     );
 }
 
@@ -467,6 +612,267 @@ private function ubicacionAcademicaPpa($anoAcademicoId, ?int $facultadId, ?int $
         ->first();
 }
 
+private function camposResolucionPpaPermitidos(): array
+{
+    return [
+        'anio_resolucion',
+        'resolucion_ministerial',
+        'fecha_resolucion_ministerial',
+        'capitulo',
+        'articulo_colectivo',
+        'articulo_conduccion',
+        'curso_resolucion',
+        'fecha_archivese',
+        'dia_archivese',
+        'mes_archivese',
+        'anio_archivese',
+        'revolucion_texto',
+        'logo_izq',
+        'logo_der',
+    ];
+}
+
+private function camposResolucionPpaFrontend(Request $request, Carbon $fecha, array $guardados = []): array
+{
+    $defaults = [
+        'anio_resolucion' => (string) $fecha->year,
+        'resolucion_ministerial' => '47/2022',
+        'fecha_resolucion_ministerial' => '27 de mayo de 2022',
+        'capitulo' => 'IX',
+        'articulo_colectivo' => '153',
+        'articulo_conduccion' => '156',
+        'curso_resolucion' => (string) $fecha->year,
+        'dia_archivese' => (string) $fecha->day,
+        'mes_archivese' => $fecha->translatedFormat('F'),
+        'anio_archivese' => (string) $fecha->year,
+        'revolucion_texto' => 'AÑO '.($fecha->year - 1958).' DE LA REVOLUCION',
+        'logo_izq' => null,
+        'logo_der' => null,
+    ];
+
+    $guardados = array_intersect_key($guardados, array_flip($this->camposResolucionPpaPermitidos()));
+    $enviados = array_intersect_key($request->all(), array_flip($this->camposResolucionPpaPermitidos()));
+
+    return array_merge($defaults, $guardados, $enviados);
+}
+
+private function camposGuardadosResolucionPpa(?int $facultadId): array
+{
+    if (!$facultadId) {
+        return [];
+    }
+
+    $configuracion = ResolucionConfiguracion::where('facultad_id', $facultadId)
+        ->where('tipo', 'ppa')
+        ->first();
+
+    return $configuracion->fields ?? [];
+}
+
+private function camposEditablesResolucionPpa(Request $request, Carbon $fecha, array $guardados = []): array
+{
+    $fields = $this->camposResolucionPpaFrontend($request, $fecha, $guardados);
+    $anioResolucion = $fields['anio_resolucion'];
+    $fechaArchivese = $fecha->copy();
+
+    if (!empty($fields['fecha_archivese'])) {
+        try {
+            $fechaArchivese = Carbon::parse($fields['fecha_archivese']);
+        } catch (\Throwable $e) {
+            $fechaArchivese = $fecha->copy();
+        }
+    }
+
+    $diaArchivese = $fields['dia_archivese'] ?? $fechaArchivese->day;
+    $mesArchivese = $fields['mes_archivese'] ?? $fechaArchivese->translatedFormat('F');
+    $anioArchivese = $fields['anio_archivese'] ?? $fechaArchivese->year;
+
+    return [
+        'anioResolucion' => $anioResolucion,
+        'resolucionMinisterial' => $fields['resolucion_ministerial'],
+        'fechaResolucionMinisterial' => $fields['fecha_resolucion_ministerial'],
+        'capitulo' => $fields['capitulo'],
+        'articuloColectivo' => $fields['articulo_colectivo'],
+        'articuloConduccion' => $fields['articulo_conduccion'],
+        'cursoResolucion' => $fields['curso_resolucion'],
+        'diaArchivese' => $diaArchivese,
+        'mesArchivese' => $mesArchivese,
+        'anioArchivese' => $anioArchivese,
+        'revolucionTexto' => $fields['revolucion_texto'] ?? 'AÑO '.((int) $anioArchivese - 1958).' DE LA REVOLUCION',
+        'logoIzq' => $fields['logo_izq'] ?? null,
+        'logoDer' => $fields['logo_der'] ?? null,
+    ];
+}
+
+private function logoResolucionPpa(array $camposEditables, string $field, bool $previewHtml): string
+{
+    $default = $field === 'logoIzq' ? 'images/logo_izq.png' : 'images/logo_der.png';
+    $value = $camposEditables[$field] ?? null;
+
+    if ($value) {
+        if (str_starts_with($value, 'data:image/')) {
+            return $value;
+        }
+
+        if (preg_match('/^https?:\/\//', $value)) {
+            return $value;
+        }
+
+        $path = str_starts_with($value, 'storage/')
+            ? substr($value, strlen('storage/'))
+            : $value;
+
+        if (Storage::disk('public')->exists($path)) {
+            return $previewHtml
+                ? asset('storage/'.$path)
+                : storage_path('app/public/'.$path);
+        }
+    }
+
+    return $previewHtml ? asset($default) : public_path($default);
+}
+
+public function configuracionResolucionPpa(Request $request)
+{
+    $facultadId = $this->documentFacultyId();
+
+    if (!$facultadId) {
+        return response()->json([
+            'error' => 'Debe enviar X-Facultad, facultad_id o id_facultad.'
+        ], 422);
+    }
+
+    Carbon::setLocale('es');
+    $fecha = Carbon::now();
+    $configuracion = ResolucionConfiguracion::where('facultad_id', $facultadId)
+        ->where('tipo', 'ppa')
+        ->first();
+
+    return response()->json([
+        'facultad_id' => $facultadId,
+        'tipo' => 'ppa',
+        'fields' => $this->camposResolucionPpaFrontend($request, $fecha, $configuracion->fields ?? []),
+        'updated_by' => $configuracion->updated_by ?? null,
+        'updated_at' => optional($configuracion)->updated_at,
+    ]);
+}
+
+public function guardarConfiguracionResolucionPpa(Request $request)
+{
+    $facultadId = $this->documentFacultyId();
+
+    if (!$facultadId) {
+        return response()->json([
+            'error' => 'Debe enviar X-Facultad, facultad_id o id_facultad.'
+        ], 422);
+    }
+
+    $data = $request->validate([
+        'fields' => 'required|array',
+    ]);
+
+    $configuracionActual = ResolucionConfiguracion::where('facultad_id', $facultadId)
+        ->where('tipo', 'ppa')
+        ->first();
+
+    $fields = array_merge(
+        $configuracionActual->fields ?? [],
+        array_intersect_key($data['fields'], array_flip($this->camposResolucionPpaPermitidos()))
+    );
+
+    $configuracion = ResolucionConfiguracion::updateOrCreate(
+        [
+            'facultad_id' => $facultadId,
+            'tipo' => 'ppa',
+        ],
+        [
+            'fields' => $fields,
+            'updated_by' => $request->header('X-User', 'desconocido'),
+        ]
+    );
+
+    Carbon::setLocale('es');
+    $fecha = Carbon::now();
+
+    return response()->json([
+        'facultad_id' => $facultadId,
+        'tipo' => 'ppa',
+        'fields' => $this->camposResolucionPpaFrontend($request, $fecha, $configuracion->fields ?? []),
+        'updated_by' => $configuracion->updated_by,
+        'updated_at' => $configuracion->updated_at,
+    ]);
+}
+
+public function guardarLogoConfiguracionResolucionPpa(Request $request)
+{
+    $facultadId = $this->documentFacultyId();
+
+    if (!$facultadId) {
+        return response()->json([
+            'error' => 'Debe enviar X-Facultad, facultad_id o id_facultad.'
+        ], 422);
+    }
+
+    $request->validate([
+        'field' => 'required|in:logo_izq,logo_der',
+        'file' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
+        'logo' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
+        'logo_izq' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
+        'logo_der' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
+    ]);
+
+    $field = $request->input('field');
+    $file = $request->file('file')
+        ?? $request->file('logo')
+        ?? $request->file($field);
+
+    if (!$file) {
+        return response()->json([
+            'error' => 'Debe enviar la imagen en file, logo o '.$field.'.'
+        ], 422);
+    }
+
+    $extension = $file->getClientOriginalExtension() ?: $file->extension();
+    $path = $file->storeAs(
+        "resoluciones/ppa/facultad_{$facultadId}",
+        "{$field}.{$extension}",
+        'public'
+    );
+
+    $configuracionActual = ResolucionConfiguracion::where('facultad_id', $facultadId)
+        ->where('tipo', 'ppa')
+        ->first();
+
+    $fields = array_merge($configuracionActual->fields ?? [], [
+        $field => $path,
+    ]);
+
+    $configuracion = ResolucionConfiguracion::updateOrCreate(
+        [
+            'facultad_id' => $facultadId,
+            'tipo' => 'ppa',
+        ],
+        [
+            'fields' => $fields,
+            'updated_by' => $request->header('X-User', 'desconocido'),
+        ]
+    );
+
+    Carbon::setLocale('es');
+    $fecha = Carbon::now();
+
+    return response()->json([
+        'facultad_id' => $facultadId,
+        'tipo' => 'ppa',
+        'field' => $field,
+        'path' => $path,
+        'url' => asset('storage/'.$path),
+        'fields' => $this->camposResolucionPpaFrontend($request, $fecha, $configuracion->fields ?? []),
+        'updated_by' => $configuracion->updated_by,
+        'updated_at' => $configuracion->updated_at,
+    ]);
+}
+
 public function getDataResolucion()
 {
     $ppa = PPA::with([
@@ -499,7 +905,7 @@ public function getDataResolucion()
 }
 
 
-public function exportResolucionPDF()
+public function exportResolucionPDF(Request $request)
 {
     $facultadId = $this->documentFacultyId();
 
@@ -516,6 +922,9 @@ public function exportResolucionPDF()
     $mes = $fecha->translatedFormat('F');
     $anio = $fecha->year;
     $revolucion = $anio - 1958;
+    $camposEditables = $this->camposEditablesResolucionPpa($request, $fecha, $this->camposGuardadosResolucionPpa($facultadId));
+    $logoIzq = $this->logoResolucionPpa($camposEditables, 'logoIzq', false);
+    $logoDer = $this->logoResolucionPpa($camposEditables, 'logoDer', false);
     $nombreFacultad = $this->documentFacultyName($facultadId);
     $nombreFacultadMayus = $this->documentFacultyNameUpper($facultadId);
 
@@ -575,7 +984,10 @@ public function exportResolucionPDF()
         'revolucion',
         'nombreDecano',
         'nombreFacultad',
-        'nombreFacultadMayus'
+        'nombreFacultadMayus',
+        'camposEditables',
+        'logoIzq',
+        'logoDer'
     ));
 $fechaTexto = $fecha->format('d-m-Y_H-i-s');
 
@@ -610,8 +1022,90 @@ $this->logDocumentGenerated('Resolución PPA', $fechaTexto);
 return response()->download($rutaCompleta, $nombreArchivo);
 }
 
+public function exportResolucionHtml(Request $request)
+{
+    $facultadId = $this->documentFacultyId();
 
-public function exportResolucionWord()
+    if (!$facultadId) {
+        return response()->json([
+            'error' => 'Debe enviar X-Facultad, facultad_id o id_facultad para previsualizar la resolución.'
+        ], 422);
+    }
+
+    Carbon::setLocale('es');
+    $fecha = Carbon::now();
+
+    $dia = $fecha->day;
+    $mes = $fecha->translatedFormat('F');
+    $anio = $fecha->year;
+    $revolucion = $anio - 1958;
+    $camposEditables = $this->camposEditablesResolucionPpa($request, $fecha, $this->camposGuardadosResolucionPpa($facultadId));
+    $logoIzq = $this->logoResolucionPpa($camposEditables, 'logoIzq', true);
+    $logoDer = $this->logoResolucionPpa($camposEditables, 'logoDer', true);
+    $nombreFacultad = $this->documentFacultyName($facultadId);
+    $nombreFacultadMayus = $this->documentFacultyNameUpper($facultadId);
+
+    $decano = Decano::where('id_facultad', $facultadId)->first();
+    $profesor = $decano ? Profesor::find($decano->id_profesor) : null;
+
+    $nombreDecano = $profesor
+        ? $profesor->nombre . ' ' . $profesor->apellidos
+        : '';
+
+    $historial = PpaHistorial::whereYear('fecha_accion', $anio)
+        ->with(['profesor.catDocente', 'profesor.catCientifica'])
+        ->get();
+
+    $mapear = function ($items) use ($facultadId) {
+        return $items->map(function ($item) use ($facultadId) {
+            if (!$this->ubicacionAcademicaPpa($item->id_a_academico, $facultadId, null)) {
+                return null;
+            }
+
+            $anio = \App\Models\AnoAcademico::find($item->id_a_academico);
+            $carrera = $anio
+                ? \App\Models\ProgFormacion::find($anio->id_prog_form)
+                : null;
+
+            return [
+                'carrera' => $carrera->nombre ?? '',
+                'anio' => $anio->identificador ?? '',
+                'nombre' => $item->profesor->nombre . ' ' . $item->profesor->apellidos,
+                'catDocente' => $item->profesor->catDocente->nombre ?? '',
+                'catCientifica' => $item->profesor->catCientifica->nombre ?? '',
+            ];
+        })->filter()->values();
+    };
+
+    $ratificados = $mapear($historial->where('accion', 'ratificado'));
+    $desnombrados = $mapear($historial->where('accion', 'desnombrado'));
+    $designados = $mapear($historial->where('accion', 'designado'));
+    $editableResolucion = true;
+    $previewHtml = true;
+
+    return response()
+        ->view('resolucion', compact(
+            'ratificados',
+            'desnombrados',
+            'designados',
+            'dia',
+            'mes',
+            'anio',
+            'revolucion',
+            'nombreDecano',
+            'nombreFacultad',
+            'nombreFacultadMayus',
+            'camposEditables',
+            'logoIzq',
+            'logoDer',
+            'editableResolucion',
+            'previewHtml'
+        ))
+        ->header('Content-Type', 'text/html; charset=UTF-8');
+}
+
+
+public function exportResolucionWord(Request $request)
 {
     $facultadId = $this->documentFacultyId();
 
@@ -628,6 +1122,9 @@ public function exportResolucionWord()
     $mes = $fecha->translatedFormat('F');
     $anio = $fecha->year;
     $revolucion = $anio - 1958;
+    $camposEditables = $this->camposEditablesResolucionPpa($request, $fecha, $this->camposGuardadosResolucionPpa($facultadId));
+    $logoIzq = $this->logoResolucionPpa($camposEditables, 'logoIzq', false);
+    $logoDer = $this->logoResolucionPpa($camposEditables, 'logoDer', false);
     $nombreFacultad = $this->documentFacultyName($facultadId);
     $nombreFacultadMayus = $this->documentFacultyNameUpper($facultadId);
 
@@ -692,7 +1189,7 @@ public function exportResolucionWord()
 
     // Logo izquierdo
     $table->addCell(2000)->addImage(
-        public_path('images/logo_izq.png'),
+        $logoIzq,
         ['width' => 60]
     );
 
@@ -717,7 +1214,7 @@ $textrun = $cellText->addTextRun([
 
     // Logo derecho
     $table->addCell(2000)->addImage(
-        public_path('images/logo_der.png'),
+        $logoDer,
         ['width' => 60]
     );
 
@@ -738,7 +1235,8 @@ $textrun = $cellText->addTextRun([
         'revolucion',
         'nombreDecano',
         'nombreFacultad',
-        'nombreFacultadMayus'
+        'nombreFacultadMayus',
+        'camposEditables'
     ))->render();
 
     // limpiar etiquetas que rompen PhpWord
@@ -856,15 +1354,16 @@ public function historial(Request $request)
 
     $historial = \App\Models\PpaHistorial::with([
             'profesor.catDocente',
-            'profesor.catCientifica'
+            'profesor.catCientifica',
+            'curso'
         ])
-        ->whereIn('accion', ['designado', 'ratificado']) // 🔥 FIX
+        ->whereIn('accion', ['designado', 'ratificado', 'desnombrado'])
         ->whereNotNull('fecha_accion')
         ->whereYear('fecha_accion', '>=', $desde)
         ->whereYear('fecha_accion', '<=', $hasta)
         ->get()
         ->unique(function ($item) {
-            return $item->id_profesor . '-' . date('Y', strtotime($item->fecha_accion)); // 🔥 FIX CLAVE
+            return $item->id_profesor . '-' . $item->id_a_academico . '-' . ($item->id_curso ?? date('Y', strtotime($item->fecha_accion)));
         });
 
     // 🔥 departamentos
@@ -905,6 +1404,8 @@ public function historial(Request $request)
     return [
         'nombre' => $profesor->nombre ?? '',
         'apellidos' => $profesor->apellidos ?? '',
+        'accion' => $item->accion ?? '',
+        'curso' => optional($item->curso)->curso ?? $this->courseNameForActionDate($item->fecha_accion) ?? '',
         'catDocente' => optional($profesor->catDocente)->nombre ?? '',
         'catCientifica' => optional($profesor->catCientifica)->nombre ?? '',
         'departamento' => $departamento,

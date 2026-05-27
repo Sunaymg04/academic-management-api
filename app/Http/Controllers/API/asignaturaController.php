@@ -14,6 +14,40 @@ use App\Models\AnoAcademico;
 
 class asignaturaController extends Controller
 {
+    public function porFacultad(string $id)
+    {
+        $query = DB::table('asignatura as asig')
+            ->join('asignatura_agno as aa', 'asig.id', '=', 'aa.id_asignatura')
+            ->join('a_academico as a', 'aa.id_a_academico', '=', 'a.id')
+            ->join('departamento_prog_d_form as dpf', 'a.id_prog_form', '=', 'dpf.id_prog_form')
+            ->join('facultad_departamento as fd', 'dpf.id_departamento', '=', 'fd.id_departamento')
+            ->where('fd.id_facultad', $id)
+            ->select(
+                'asig.id',
+                'asig.nombre',
+                DB::raw('NULL as codigo'),
+                'fd.id_facultad as facultad_id'
+            )
+            ->distinct()
+            ->orderBy('asig.nombre');
+
+        $asignaturas = $query->get();
+
+        if ($asignaturas->isEmpty()) {
+            $asignaturas = DB::table('asignatura as asig')
+                ->select(
+                    'asig.id',
+                    'asig.nombre',
+                    DB::raw('NULL as codigo'),
+                    DB::raw((int) $id.' as facultad_id')
+                )
+                ->orderBy('asig.nombre')
+                ->get();
+        }
+
+        return response()->json($asignaturas);
+    }
+
    public function index()
     {
         $asignaturas = Asignatura::with([

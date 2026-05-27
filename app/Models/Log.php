@@ -12,5 +12,6 @@ class Log extends Model
     'accion',
     'descripcion',
     'facultad_id',
+    'id_curso',
 ];
 }

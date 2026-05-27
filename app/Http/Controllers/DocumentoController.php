@@ -46,9 +46,7 @@ public function index(Request $request)
         $query->where('periodo', $request->periodo);
     }
 
-    $facultadId = $request->query('facultad_id')
-        ?? $request->query('id_facultad')
-        ?? $request->header('X-Facultad');
+    $facultadId = $this->documentFacultyId();
 
     if ($facultadId) {
         $query->where('facultad_id', $facultadId);

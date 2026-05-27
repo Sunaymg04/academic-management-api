@@ -91,19 +91,24 @@ Route::put('/universidad/{id}',[universidadController::class, 'update']);
 Route::delete('/universidad/{id}', [universidadController::class, 'destroy']);
 
 //Rutas universidad-facultad
+Route::middleware('gestion.roles.context')->group(function () {
 Route::get('/historial/unifacul', [historialUniversidadFacultadController::class, 'index']);
 Route::delete('/historial/unifacul', [historialUniversidadFacultadController::class, 'destroy']);
+});
 
 //Rutas facultad
 Route::get('/facultad', [FacultadController::class, 'index']);
 Route::post('/facultad', [FacultadController::class, 'store']);
+Route::get('/facultad/{id}/asignaturas', [asignaturaController::class, 'porFacultad']);
 Route::get('/facultad/{id}',[FacultadController::class, 'show']);
 Route::put('/facultad/{id}',[FacultadController::class, 'update']);
 Route::delete('/facultad/{id}', [FacultadController::class, 'destroy']);
 
 //Rutas facultad-departamento
+Route::middleware('gestion.roles.context')->group(function () {
 Route::get('/historial/faculdep', [historialFacDepController::class, 'index']);
 Route::delete('/historial/faculdep', [historialFacDepController::class, 'destroy']);
+});
 
 //Rutas departamento
 Route::get('/departamento', [departamentoController::class, 'index']);
@@ -113,8 +118,10 @@ Route::put('/departamento/{id}',[departamentoController::class, 'update']);
 Route::delete('/departamento/{id}', [departamentoController::class, 'destroy']);
 
 //Rutas departamento-programaDeFormacion
+Route::middleware('gestion.roles.context')->group(function () {
 Route::get('/historial/depProgForm', [historialDepProgFormController::class, 'index']);
 Route::delete('/historial/depProgForm', [historialDepProgFormController::class, 'destroy']);
+});
 
 //Rutas Programa de Formacion
 Route::get('/progForm', [progFormController::class, 'index']);
@@ -283,10 +290,16 @@ Route::post('/cohorte', [CohorteController::class, 'store']);
 Route::delete('/cohorte/{id}', [CohorteController::class, 'destroy']);
 
 
+Route::middleware('gestion.roles.context')->group(function () {
 Route::post('/ppa/designar', [PPAController::class, 'designar']);
 Route::post('/ppa/ratificar', [PPAController::class, 'ratificar']);
 Route::post('/ppa/desnombrar', [PPAController::class, 'desnombrar']);
+Route::get('/ppa/historial', [PPAController::class, 'historialPorCurso']);
+Route::get('/ppa/historico', [PPAController::class, 'historialPorCurso']);
+Route::get('/ppa/todos', [PPAController::class, 'historialPorCurso']);
+Route::get('/ppa/all', [PPAController::class, 'historialPorCurso']);
 Route::get('/ppa', [PPAController::class, 'index']);
+});
 
 Route::get('/facultad/{id}/departamentos', [historialFacDepController::class, 'departamentosPorFacultad']);
 Route::get('/departamento/{id}/carreras', [historialDepProgFormController::class, 'carrerasPorDepartamento']);
@@ -294,16 +307,27 @@ Route::get('/programa/{id}/anios', [anoAcademicoController::class, 'aniosPorProg
 Route::get('/anio/{id}/curso', [anoAcademicoController::class, 'cursoPorAnio']);
 
 
+Route::middleware('gestion.roles.context')->group(function () {
 Route::get('/logs', [LogController::class, 'index']);
+
+Route::get('/resoluciones/ppa/configuracion', [PPAController::class, 'configuracionResolucionPpa']);
+Route::put('/resoluciones/ppa/configuracion', [PPAController::class, 'guardarConfiguracionResolucionPpa']);
+Route::post('/resoluciones/ppa/configuracion/logo', [PPAController::class, 'guardarLogoConfiguracionResolucionPpa']);
+Route::get('/resoluciones/aa/configuracion', [AlumnoAyudanteController::class, 'configuracionResolucionAa']);
+Route::put('/resoluciones/aa/configuracion', [AlumnoAyudanteController::class, 'guardarConfiguracionResolucionAa']);
+Route::post('/resoluciones/aa/configuracion/logo', [AlumnoAyudanteController::class, 'guardarLogoConfiguracionResolucionAa']);
 
 Route::get('/export/ppa/pdf', [PPAController::class, 'exportPDF']);
 Route::get('/export/ppa/word', [PPAController::class, 'exportWord']);
+Route::get('/export/resolucion/ppa/html', [PPAController::class, 'exportResolucionHtml']);
+Route::get('/export/resolucion/ppa/preview-html', [PPAController::class, 'exportResolucionHtml']);
 Route::get('/export/resolucion/ppa/pdf', [PPAController::class, 'exportResolucionPDF']);
 Route::get('/export/resolucion/ppa/word', [PPAController::class, 'exportResolucionWord']);
 
 
 Route::get('/estudiante', [EstudianteController::class, 'index']);
 Route::post('/estudiante', [EstudianteController::class, 'store']);
+});
 
 Route::apiResource('tipos', TipoController::class);
 
@@ -331,31 +355,36 @@ Route::apiResource('decano', DecanoController::class);
 
 // 🔥 extras
 Route::get('decano/actual/{facultad}', [DecanoController::class, 'actual']);
-Route::get('decano/historial/{facultad}', [DecanoController::class, 'historial']);
+Route::get('decano/historial/{facultad}', [DecanoController::class, 'historial'])
+    ->middleware('gestion.roles.context');
 
 Route::apiResource('jefe-departamento', JefeDepartamentoController::class);
 
 // 🔥 extras
 Route::get('jefe-departamento/actual/{departamento}', [JefeDepartamentoController::class, 'actual']);
-Route::get('jefe-departamento/historial/{departamento}', [JefeDepartamentoController::class, 'historial']);
+Route::get('jefe-departamento/historial/{departamento}', [JefeDepartamentoController::class, 'historial'])
+    ->middleware('gestion.roles.context');
 
 
 Route::apiResource('miembro-departamento', MiembroDepartamentoController::class);
 
 // extras
 Route::get('miembro-departamento/activos/{departamento}', [MiembroDepartamentoController::class, 'activos']);
-Route::get('miembro-departamento/historial/{profesor}', [MiembroDepartamentoController::class, 'historialProfesor']);
+Route::get('miembro-departamento/historial/{profesor}', [MiembroDepartamentoController::class, 'historialProfesor'])
+    ->middleware('gestion.roles.context');
 
 
 Route::apiResource('coordinador-carrera', CoordinadorCarreraController::class);
 
 Route::get('coordinador-carrera/actual/{programa}', [CoordinadorCarreraController::class, 'actual']);
-Route::get('coordinador-carrera/historial/{programa}', [CoordinadorCarreraController::class, 'historial']);
+Route::get('coordinador-carrera/historial/{programa}', [CoordinadorCarreraController::class, 'historial'])
+    ->middleware('gestion.roles.context');
 
 Route::apiResource('profesor-guia', ProfesorGuiaController::class);
 
 Route::get('profesor-guia/actual/{grupo}', [ProfesorGuiaController::class, 'actual']);
-Route::get('profesor-guia/historial/{grupo}', [ProfesorGuiaController::class, 'historial']);
+Route::get('profesor-guia/historial/{grupo}', [ProfesorGuiaController::class, 'historial'])
+    ->middleware('gestion.roles.context');
 
 
 
@@ -366,18 +395,30 @@ Route::post('alumno-ayudante/ratificar/{id}', [AlumnoAyudanteController::class, 
 Route::post('alumno-ayudante/desnombrar/{id}', [AlumnoAyudanteController::class, 'desnombrar']);
 
 Route::get('alumno-ayudante/actual/{estudiante}', [AlumnoAyudanteController::class, 'actual']);
+Route::middleware('gestion.roles.context')->group(function () {
+Route::get('alumno-ayudante/historial', [AlumnoAyudanteController::class, 'historialPorCurso']);
+Route::get('alumno-ayudante/historico', [AlumnoAyudanteController::class, 'historialPorCurso']);
+Route::get('alumno-ayudante/todos', [AlumnoAyudanteController::class, 'historialPorCurso']);
+Route::get('alumno-ayudante/all', [AlumnoAyudanteController::class, 'historialPorCurso']);
 Route::get('alumno-ayudante/historial/{estudiante}', [AlumnoAyudanteController::class, 'historial']);
+});
 Route::get('alumno-ayudante/activos', [AlumnoAyudanteController::class, 'activos']);
 
 
+Route::middleware('gestion.roles.context')->group(function () {
 Route::get('/export/resolucion/aa/pdf', [AlumnoAyudanteController::class, 'aaPdf']);
+Route::get('/export/resolucion/aa/html', [AlumnoAyudanteController::class, 'aaHtml']);
+Route::get('/export/resolucion/aa/preview-html', [AlumnoAyudanteController::class, 'aaHtml']);
 Route::get('/export/resolucion/aa/word', [AlumnoAyudanteController::class, 'aaWord']);
 Route::get('/export/aa/pdf', [AlumnoAyudanteController::class, 'exportPDF']);
 Route::get('/export/aa/word', [AlumnoAyudanteController::class, 'exportWord']);
 
 
 Route::get('/documentos', [DocumentoController::class, 'index']);
+});
 Route::get('/cursos', [cursoController::class, 'index']);
 
+Route::middleware('gestion.roles.context')->group(function () {
 Route::post('/documentos/historial', [PPAController::class, 'historial']);
 Route::post('/documentos/historial-aa', [AlumnoAyudanteController::class, 'historialAA']);
+});

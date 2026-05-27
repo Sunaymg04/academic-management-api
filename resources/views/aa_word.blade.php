@@ -2,22 +2,22 @@
 
 <!-- 🟣 TITULO -->
 <p style="font-family: Arial; font-size: 12pt;"><strong>EL DECANO</strong></p>
-<p style="font-family: Arial; font-size: 12pt;"><strong>Resolución Decanal /{{ $anio }}</strong></p><br/>
+<p style="font-family: Arial; font-size: 12pt;"><strong>Resolución Decanal /{{ $camposEditables['anioResolucion'] ?? $anio }}</strong></p><br/>
 
 <!-- 🟣 POR CUANTO -->
 <p style="font-family: Arial; font-size: 12pt;">
-<strong>POR CUANTO:</strong> La Resolución Ministerial 47/2022 dictada por el Ministro de Educación Superior con fecha 27 de mayo de 2022 establece en su Capítulo IX las normas y procedimientos para el trabajo metodológico.
+<strong>POR CUANTO:</strong> La Resolución Ministerial {{ $camposEditables['resolucionMinisterial'] ?? '47/2022' }} dictada por el Ministro de Educación Superior con fecha {{ $camposEditables['fechaResolucionMinisterial'] ?? '27 de mayo de 2022' }} establece en su Capítulo {{ $camposEditables['capitulo'] ?? 'IX' }} las normas y procedimientos para el trabajo metodológico.
 </p><br/>
 
 <p style="font-family: Arial; font-size: 12pt;">
-<strong>POR CUANTO:</strong> La Resolución Ministerial 47/2022 en <strong>su capítulo IX, artículo 153 </strong> establece que el colectivo de año es el encargado de llevar a cabo el trabajo metodológico en este nivel organizativo. Constituye un nivel de dirección atípico en la estructura de las instituciones de educación superior, conducido por el profesor principal del año académico. Agrupa a los profesores que desarrollan las asignaturas del año, a los profesores guías de cada grupo, a los tutores y a los representantes de las organizaciones estudiantiles.
+<strong>POR CUANTO:</strong> La Resolución Ministerial {{ $camposEditables['resolucionMinisterial'] ?? '47/2022' }} en <strong>su capítulo {{ $camposEditables['capitulo'] ?? 'IX' }}, artículo {{ $camposEditables['articuloColectivo'] ?? '153' }} </strong> establece que el colectivo de año es el encargado de llevar a cabo el trabajo metodológico en este nivel organizativo. Constituye un nivel de dirección atípico en la estructura de las instituciones de educación superior, conducido por el profesor principal del año académico. Agrupa a los profesores que desarrollan las asignaturas del año, a los profesores guías de cada grupo, a los tutores y a los representantes de las organizaciones estudiantiles.
 </p><br/>
 
 <p style="font-family: Arial; font-size: 12pt;">
 Este colectivo tiene como propósito lograr el cumplimiento con calidad de los objetivos de formación del año académico, así como otros que se hayan concertado para responder a las características propias del grupo y del momento, mediante la implementación de la estrategia educativa del año académico.</p>
 <br/>
 <p style="font-family: Arial; font-size: 12pt;">
-<strong>POR CUANTO:</strong> La Resolución Ministerial 47/2022 en <strong>su capítulo IX, artículo 156</strong> establece que la conducción del colectivo de año debe estar a cargo de un profesor que posea una buena preparación pedagógica y científica, así como cualidades y actitudes que le permitan desempeñarse en esa responsabilidad. Es la principal autoridad académica del año y se subordina directamente al decano de la facultad-carrera o al jefe del departamento-carrera, según corresponda. </p>
+<strong>POR CUANTO:</strong> La Resolución Ministerial {{ $camposEditables['resolucionMinisterial'] ?? '47/2022' }} en <strong>su capítulo {{ $camposEditables['capitulo'] ?? 'IX' }}, artículo {{ $camposEditables['articuloConduccion'] ?? '156' }}</strong> establece que la conducción del colectivo de año debe estar a cargo de un profesor que posea una buena preparación pedagógica y científica, así como cualidades y actitudes que le permitan desempeñarse en esa responsabilidad. Es la principal autoridad académica del año y se subordina directamente al decano de la facultad-carrera o al jefe del departamento-carrera, según corresponda. </p>
 <br/>
 <p style="font-family: Arial; font-size: 12pt;">
 Su trabajo es esencial para el cumplimiento de los objetivos de formación del año. Su labor de dirección metodológica está basada en la coordinación, la asesoría y el control de los profesores guías, los tutores y el colectivo de profesores del año.</p>
@@ -33,7 +33,7 @@ Su trabajo es esencial para el cumplimiento de los objetivos de formación del a
 
 <!-- 🟣 PRIMERO -->
 <p style="font-family: Arial; font-size: 12pt;">
-<strong>PRIMERO:</strong> Designar a los Alumnos Ayudantes para el primer período del curso {{$anio}}
+<strong>PRIMERO:</strong> Designar a los Alumnos Ayudantes para el primer período del curso {{ $camposEditables['cursoResolucion'] ?? $anio }}
 </p><br/>
 
 __TABLA_DESIGNADOS__
@@ -42,7 +42,7 @@ __TABLA_DESIGNADOS__
 
 <!-- 🟣 SEGUNDO -->
  <p style="font-family: Arial; font-size: 12pt;">
-<strong>SEGUNDO:</strong> Desnombrar a los siguientes Alumnos Ayudantes para el primer período del curso {{$anio}}
+<strong>SEGUNDO:</strong> Desnombrar a los siguientes Alumnos Ayudantes para el primer período del curso {{ $camposEditables['cursoResolucion'] ?? $anio }}
 </p><br/>
 __TABLA_DESNOMBRADOS__
 
@@ -80,7 +80,7 @@ Esta Resolución entra en vigor a partir de su firma.
 </p><br/>
 
 <p style="font-family: Arial; font-size: 12pt;">
-<strong>DADA</strong> en la Universidad Central “Marta Abreu” de Las Villas, a los {{ $dia }} días del mes de {{ $mes }} de {{ $anio }}. “AÑO {{ $revolucion }} DE LA REVOLUCION”.
+<strong>DADA</strong> en la Universidad Central “Marta Abreu” de Las Villas, a los {{ $camposEditables['diaArchivese'] ?? $dia }} días del mes de {{ $camposEditables['mesArchivese'] ?? $mes }} de {{ $camposEditables['anioArchivese'] ?? $anio }}. “{{ $camposEditables['revolucionTexto'] ?? ('AÑO '.$revolucion.' DE LA REVOLUCION') }}”.
 </p><br/>
 
 <!-- 🟣 FIRMA -->

@@ -32,4 +32,9 @@ public function anoAcademico()
 {
     return $this->belongsTo(AnoAcademico::class, 'id_a_academico');
 }
+
+public function curso()
+{
+    return $this->belongsTo(Curso::class, 'id_curso');
+}
 }

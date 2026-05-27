@@ -31,10 +31,12 @@
             text-align: center;
         }
 
-        .carnet { width: 18%; text-align: center; }
-        .nombre { width: 32%; }
-        .tutor { width: 24%; }
-        .departamento { width: 18%; }
+        .carnet { width: 14%; text-align: center; }
+        .nombre { width: 26%; }
+        .accion { width: 10%; text-align: center; }
+        .curso { width: 12%; text-align: center; }
+        .tutor { width: 20%; }
+        .departamento { width: 10%; }
         .ano { width: 8%; text-align: center; }
     </style>
 </head>
@@ -49,9 +51,11 @@
         <tr>
             <th class="carnet">Carnet</th>
             <th class="nombre">Nombre del Estudiante</th>
+            <th class="accion">Acción</th>
+            <th class="curso">Curso</th>
             <th class="tutor">Tutor</th>
             <th class="departamento">Departamento</th>
-            <th class="ano">Año</th>
+            <th class="ano">Año Acción</th>
         </tr>
     </thead>
 
@@ -60,6 +64,8 @@
             <tr>
                 <td class="carnet">{{ $item['carnet'] }}</td>
                 <td class="nombre">{{ $item['nombre'] }}</td>
+                <td class="accion">{{ $item['accion'] }}</td>
+                <td class="curso">{{ $item['curso'] }}</td>
                 <td class="tutor">{{ $item['tutor'] }}</td>
                 <td class="departamento">{{ $item['departamento'] }}</td>
                <td class="ano">{{ $item['anio'] }}</td>

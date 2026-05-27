@@ -2,6 +2,17 @@
 <html>
 <head>
 <meta charset="utf-8">
+@php
+    $editableResolucion = $editableResolucion ?? false;
+    $previewHtml = $previewHtml ?? false;
+    $fieldAttrs = function ($field) use ($editableResolucion) {
+        return $editableResolucion
+            ? 'data-field="'.$field.'" contenteditable="true" spellcheck="false" class="editable-field"'
+            : '';
+    };
+    $logoIzq = $logoIzq ?? ($previewHtml ? asset('images/logo_izq.png') : public_path('images/logo_izq.png'));
+    $logoDer = $logoDer ?? ($previewHtml ? asset('images/logo_der.png') : public_path('images/logo_der.png'));
+@endphp
 
 <style>
 body {
@@ -144,6 +155,28 @@ body {
     font-weight: bold;
     margin: 10px 0 4px 0;
 }
+@if($editableResolucion)
+.editable-field {
+    cursor: text;
+    border-radius: 2px;
+}
+
+.editable-field:hover,
+.editable-field:focus {
+    outline: 1px dashed #2563eb;
+    background: #eff6ff;
+}
+
+.editable-logo {
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.editable-logo:hover {
+    outline: 2px dashed #2563eb;
+    outline-offset: 4px;
+}
+@endif
 
 </style>
 
@@ -156,7 +189,7 @@ body {
 <table class="header-table">
     <tr>
         <td class="logo">
-            <img src="{{ public_path('images/logo_izq.png') }}">
+            <img src="{{ $logoIzq }}" @if($editableResolucion) data-field="logo_izq" data-logo-field="logo_izq" class="editable-logo" @endif>
         </td>
 
         <td class="header-text">
@@ -166,7 +199,7 @@ body {
         </td>
 
         <td class="logo">
-            <img src="{{ public_path('images/logo_der.png') }}">
+            <img src="{{ $logoDer }}" @if($editableResolucion) data-field="logo_der" data-logo-field="logo_der" class="editable-logo" @endif>
         </td>
     </tr>
 </table>
@@ -176,22 +209,22 @@ body {
 <!-- 🟣 TITULO -->
  <div class="titulo-bloque">
     <div class="decano">EL DECANO</div>
-    <div class="resolucion">Resolución Decanal /{{ $anio }}</div>
+    <div class="resolucion">Resolución Decanal /<span {!! $fieldAttrs('anio_resolucion') !!}>{{ $camposEditables['anioResolucion'] ?? $anio }}</span></div>
 </div>
 <!-- 🟣 POR CUANTO -->
 <p class="parrafo">
-<strong>POR CUANTO:</strong> La Resolución Ministerial 47/2022 dictada por el Ministro de Educación Superior con fecha 27 de mayo de 2022 establece en su Capítulo IX las normas y procedimientos para el trabajo metodológico.
+<strong>POR CUANTO:</strong> La Resolución Ministerial <span {!! $fieldAttrs('resolucion_ministerial') !!}>{{ $camposEditables['resolucionMinisterial'] ?? '47/2022' }}</span> dictada por el Ministro de Educación Superior con fecha <span {!! $fieldAttrs('fecha_resolucion_ministerial') !!}>{{ $camposEditables['fechaResolucionMinisterial'] ?? '27 de mayo de 2022' }}</span> establece en su Capítulo <span {!! $fieldAttrs('capitulo') !!}>{{ $camposEditables['capitulo'] ?? 'IX' }}</span> las normas y procedimientos para el trabajo metodológico.
 </p>
 
 <p class="parrafo">
-<strong>POR CUANTO:</strong> La Resolución Ministerial 47/2022 en <strong>su capítulo IX, artículo 153 </strong>establece que el colectivo de año es el encargado de llevar a cabo el trabajo metodológico en este nivel organizativo. Constituye un nivel de dirección atípico en la estructura de las instituciones de educación superior, conducido por el profesor principal del año académico. Agrupa a los profesores que desarrollan las asignaturas del año, a los profesores guías de cada grupo, a los tutores y a los representantes de las organizaciones estudiantiles.
+<strong>POR CUANTO:</strong> La Resolución Ministerial <span {!! $fieldAttrs('resolucion_ministerial') !!}>{{ $camposEditables['resolucionMinisterial'] ?? '47/2022' }}</span> en <strong>su capítulo <span {!! $fieldAttrs('capitulo') !!}>{{ $camposEditables['capitulo'] ?? 'IX' }}</span>, artículo <span {!! $fieldAttrs('articulo_colectivo') !!}>{{ $camposEditables['articuloColectivo'] ?? '153' }}</span> </strong>establece que el colectivo de año es el encargado de llevar a cabo el trabajo metodológico en este nivel organizativo. Constituye un nivel de dirección atípico en la estructura de las instituciones de educación superior, conducido por el profesor principal del año académico. Agrupa a los profesores que desarrollan las asignaturas del año, a los profesores guías de cada grupo, a los tutores y a los representantes de las organizaciones estudiantiles.
 </p>
 
 <p class="parrafo-sangria">
 Este colectivo tiene como propósito lograr el cumplimiento con calidad de los objetivos de formación del año académico, así como otros que se hayan concertado para responder a las características propias del grupo y del momento, mediante la implementación de la estrategia educativa del año académico.</p>
 
 <p class="parrafo">
-<strong>POR CUANTO:</strong> La Resolución Ministerial 47/2022 en <strong>su capítulo IX, artículo 156</strong> establece que la conducción del colectivo de año debe estar a cargo de un profesor que posea una buena preparación pedagógica y científica, así como cualidades y actitudes que le permitan desempeñarse en esa responsabilidad. Es la principal autoridad académica del año y se subordina directamente al decano de la facultad-carrera o al jefe del departamento-carrera, según corresponda. </p>
+<strong>POR CUANTO:</strong> La Resolución Ministerial <span {!! $fieldAttrs('resolucion_ministerial') !!}>{{ $camposEditables['resolucionMinisterial'] ?? '47/2022' }}</span> en <strong>su capítulo <span {!! $fieldAttrs('capitulo') !!}>{{ $camposEditables['capitulo'] ?? 'IX' }}</span>, artículo <span {!! $fieldAttrs('articulo_conduccion') !!}>{{ $camposEditables['articuloConduccion'] ?? '156' }}</span></strong> establece que la conducción del colectivo de año debe estar a cargo de un profesor que posea una buena preparación pedagógica y científica, así como cualidades y actitudes que le permitan desempeñarse en esa responsabilidad. Es la principal autoridad académica del año y se subordina directamente al decano de la facultad-carrera o al jefe del departamento-carrera, según corresponda. </p>
 
 <p class="parrafo-sangria">
 Su trabajo es esencial para el cumplimiento de los objetivos de formación del año. Su labor de dirección metodológica está basada en la coordinación, la asesoría y el control de los profesores guías, los tutores y el colectivo de profesores del año.</p>
@@ -206,7 +239,7 @@ Su trabajo es esencial para el cumplimiento de los objetivos de formación del a
 
 <!-- 🟣 PRIMERO -->
 <p class="articulo">
-<strong>PRIMERO:</strong> Designar a los Alumnos Ayudantes para el primer período del curso {{$ano}}
+<strong>PRIMERO:</strong> Designar a los Alumnos Ayudantes para el primer período del curso <span {!! $fieldAttrs('curso_resolucion') !!}>{{ $camposEditables['cursoResolucion'] ?? $ano }}</span>
 </p>
 
 @foreach($designados as $grupo)
@@ -245,7 +278,7 @@ Su trabajo es esencial para el cumplimiento de los objetivos de formación del a
 
 <!-- 🟣 Segunda -->
 <p class="articulo">
-<strong>SEGUNDO:</strong>  Desnombrar a los siguientes Alumnos Ayudantes para el primer período del curso {{$ano}}
+<strong>SEGUNDO:</strong>  Desnombrar a los siguientes Alumnos Ayudantes para el primer período del curso <span {!! $fieldAttrs('curso_resolucion') !!}>{{ $camposEditables['cursoResolucion'] ?? $ano }}</span>
 </p>
 
 @foreach($desnombrados as $grupo)
@@ -317,7 +350,7 @@ Esta Resolución entra en vigor a partir de su firma.
 </p>
 
 <p class="parrafo">
-<strong>DADA</strong> en la Universidad Central “Marta Abreu” de Las Villas, a los {{ $dia }} días del mes de {{ $mes }} de {{ $ano }}. “AÑO {{ $revolucion }} DE LA REVOLUCION”.
+<strong>DADA</strong> en la Universidad Central “Marta Abreu” de Las Villas, a los <span {!! $fieldAttrs('dia_archivese') !!}>{{ $camposEditables['diaArchivese'] ?? $dia }}</span> días del mes de <span {!! $fieldAttrs('mes_archivese') !!}>{{ $camposEditables['mesArchivese'] ?? $mes }}</span> de <span {!! $fieldAttrs('anio_archivese') !!}>{{ $camposEditables['anioArchivese'] ?? $ano }}</span>. “<span {!! $fieldAttrs('revolucion_texto') !!}>{{ $camposEditables['revolucionTexto'] ?? ('AÑO '.$revolucion.' DE LA REVOLUCION') }}</span>”.
 </p>
 
 <!-- 🟣 FIRMA -->
@@ -325,6 +358,24 @@ Esta Resolución entra en vigor a partir de su firma.
     <p>__________________________</p>
     <p>Dr. C. {{ $nombreDecano }}</p>
 </div>
+
+@if($editableResolucion)
+<script>
+document.addEventListener('input', function (event) {
+    var field = event.target && event.target.dataset ? event.target.dataset.field : null;
+
+    if (!field) {
+        return;
+    }
+
+    document.querySelectorAll('[data-field="' + field + '"]').forEach(function (element) {
+        if (element !== event.target) {
+            element.textContent = event.target.textContent;
+        }
+    });
+});
+</script>
+@endif
 
 </body>
 </html>

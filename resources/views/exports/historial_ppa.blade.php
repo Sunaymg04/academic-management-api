@@ -31,12 +31,14 @@
             text-align: center;
         }
 
-        .profesor { width: 22%; }
-        .cat { width: 10%; text-align: center; }
-        .departamento { width: 18%; }
-        .carrera { width: 22%; }
-        .ano { width: 9%; text-align: center; }
-        .academico { width: 9%; text-align: center; }
+        .profesor { width: 18%; }
+        .accion { width: 9%; text-align: center; }
+        .curso { width: 10%; text-align: center; }
+        .cat { width: 8%; text-align: center; }
+        .departamento { width: 14%; }
+        .carrera { width: 16%; }
+        .ano { width: 7%; text-align: center; }
+        .academico { width: 10%; text-align: center; }
     </style>
 </head>
 <body>
@@ -49,11 +51,13 @@
     <thead>
         <tr>
             <th class="profesor">Profesor</th>
+            <th class="accion">Acción</th>
+            <th class="curso">Curso</th>
             <th class="cat">Cat Docente</th>
             <th class="cat">Cat Científica</th>
             <th class="departamento">Departamento</th>
             <th class="carrera">Carrera</th>
-            <th class="ano">Año PPA</th>
+            <th class="ano">Año Acción</th>
 <th class="academico">Año Académico</th>
         </tr>
     </thead>
@@ -62,6 +66,8 @@
         @foreach($data as $item)
             <tr>
                 <td class="profesor">{{ $item['nombre'] }} {{ $item['apellidos'] }}</td>
+                <td class="accion">{{ $item['accion'] }}</td>
+                <td class="curso">{{ $item['curso'] }}</td>
                 <td class="cat">{{ $item['catDocente'] }}</td>
                 <td class="cat">{{ $item['catCientifica'] }}</td>
                 <td class="departamento">{{ $item['departamento'] }}</td>

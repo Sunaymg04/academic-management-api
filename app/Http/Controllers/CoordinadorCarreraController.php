@@ -16,8 +16,6 @@ class CoordinadorCarreraController extends Controller
     }
 
     // 🔹 CREAR (CLAVE 🔥)
-    use Illuminate\Support\Facades\DB;
-
 public function store(Request $request)
 {
     $request->validate([

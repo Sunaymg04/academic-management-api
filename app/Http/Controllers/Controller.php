@@ -49,6 +49,43 @@ abstract class Controller
         return "{$safePrefix}_{$timestamp}_{$safeUser}.{$extension}";
     }
 
+    protected function courseForActionDate($date): ?\App\Models\Curso
+    {
+        $courseName = $this->courseNameForActionDate($date);
+
+        if (!$courseName) {
+            return null;
+        }
+
+        return \App\Models\Curso::where('curso', $courseName)->first();
+    }
+
+    protected function courseNameForActionDate($date): ?string
+    {
+        $date = \Carbon\Carbon::parse($date);
+        $month = (int) $date->format('n');
+        $year = (int) $date->format('Y');
+
+        if ($month >= 9) {
+            return $year.'-'.($year + 1);
+        }
+
+        if ($month <= 7) {
+            return ($year - 1).'-'.$year;
+        }
+
+        return null;
+    }
+
+    protected function courseErrorForActionDate($date)
+    {
+        $date = \Carbon\Carbon::parse($date)->format('Y-m-d');
+
+        return response()->json([
+            'error' => "No existe un curso académico configurado para la fecha de acción {$date}.",
+        ], 422);
+    }
+
     protected function logDocumentGenerated(string $documento, $periodo = null): void
     {
         $usuario = request()->header('X-User', 'desconocido');

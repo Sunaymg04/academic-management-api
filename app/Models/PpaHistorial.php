@@ -20,4 +20,9 @@ class PpaHistorial extends Model
 {
     return $this->belongsTo(Profesor::class, 'id_profesor');
 }
+
+public function curso()
+{
+    return $this->belongsTo(Curso::class, 'id_curso');
+}
 }
