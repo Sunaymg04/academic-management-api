@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Curriculo extends Model
 {
@@ -16,4 +17,24 @@ class Curriculo extends Model
         'created_at',
         'updated_at'
     ];
+
+    public function disciplinas(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Disciplina::class,
+            'curriculo_disciplina',
+            'id_curriculo',
+            'id_disciplina'
+        );
+    }
+
+    public function planesEstudio(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            PlanEstudio::class,
+            'plan-estudio_curriculo',
+            'id_curriculo',
+            'id_plan_estudio'
+        );
+    }
 }
