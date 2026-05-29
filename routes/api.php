@@ -20,6 +20,7 @@ use App\Http\Controllers\API\provinciaController;
 use App\Http\Controllers\API\universidadController;
 use App\Http\Controllers\API\categoriaCientificaController;
 use App\Http\Controllers\API\categoriaDocenteController;
+use App\Http\Controllers\API\CalificacionController;
 use App\Http\Controllers\API\CurriculoController;
 use App\Http\Controllers\API\DisciplinaController;
 use App\Http\Controllers\API\HistorialsC\CurriculoDisciplinaController;
@@ -147,6 +148,13 @@ Route::post('/modalidad', [modalidadCarreraController::class, 'store']);
 Route::get('/modalidad/{id}',[modalidadCarreraController::class, 'show']);
 Route::put('/modalidad/{id}',[modalidadCarreraController::class, 'update']);
 Route::delete('/modalidad/{id}', [modalidadCarreraController::class, 'destroy']);
+
+//Rutas Calificacion
+Route::get('/calificacion', [CalificacionController::class, 'index']);
+Route::post('/calificacion', [CalificacionController::class, 'store']);
+Route::get('/calificacion/{id}', [CalificacionController::class, 'show']);
+Route::put('/calificacion/{id}', [CalificacionController::class, 'update']);
+Route::delete('/calificacion/{id}', [CalificacionController::class, 'destroy']);
 
 //Rutas programa_de_formacion-modalidad_de_carrera
 Route::get('/progFormMod', [historialProgFormModCarController::class, 'index']);

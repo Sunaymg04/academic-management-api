@@ -23,7 +23,7 @@ class modalidadCarreraController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            "nombre"=> "required|unique:modalidad-carrera,nombre"
+            "nombre"=> "required|unique:modalidad_carrera,nombre"
         ]);
         if($validator->fails()){
             return response()->json([
@@ -77,7 +77,7 @@ class modalidadCarreraController extends Controller
             ], 400);
         }
         $validator = Validator::make($request->all(), [
-            'nombre' => 'unique:modalidad-carrera,nombre,'.$id,
+            'nombre' => 'unique:modalidad_carrera,nombre,'.$id,
         ]);
         if($validator->fails()){
             return response()->json([

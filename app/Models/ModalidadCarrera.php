@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ModalidadCarrera extends Model
 {
     use HasFactory;
-    protected $table = 'modalidad-carrera';
+    protected $table = 'modalidad_carrera';
     protected $fillable = [
         'nombre'
     ];

@@ -11,6 +11,9 @@ class PlanEstudio extends Model
     protected $table = 'plan-estudio';
     protected $fillable = [
         'id_prog_form',
+        'id_curso',
+        'id_modalidad',
+        'id_calificacion',
         'nombre'
     ];
     protected $hidden = [
@@ -21,6 +24,26 @@ class PlanEstudio extends Model
     public function versiones()
     {
         return $this->hasMany(Version::class, 'plan_estudio_id');
+    }
+
+    public function programaFormacion()
+    {
+        return $this->belongsTo(ProgFormacion::class, 'id_prog_form');
+    }
+
+    public function curso()
+    {
+        return $this->belongsTo(Curso::class, 'id_curso');
+    }
+
+    public function modalidad()
+    {
+        return $this->belongsTo(ModalidadCarrera::class, 'id_modalidad');
+    }
+
+    public function calificacion()
+    {
+        return $this->belongsTo(Calificacion::class, 'id_calificacion');
     }
    
 }

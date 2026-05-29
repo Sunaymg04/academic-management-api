@@ -10,7 +10,7 @@ class ProgFormModalidadCarrera extends Model
 {
     use HasFactory;
     use HasUuids;
-    protected $table = 'prog-form-modalidad-carrera';
+    protected $table = 'prog_form_modalidad_carrera';
     protected $primaryKey = 'uuid';
     public $incrementing = false;
     protected $keyType = 'string';

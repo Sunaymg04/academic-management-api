@@ -7,13 +7,19 @@ use Illuminate\Http\Request;
 use App\Models\PlanEstudio;
 use App\Models\ProgFormacion;
 use App\Models\PlanEstudioProgForm;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class PlanEstudioController extends Controller
 {
     public function index()
     {
-        $planes = PlanEstudio::all();
+        $planes = PlanEstudio::with([
+            'programaFormacion',
+            'curso',
+            'modalidad',
+            'calificacion',
+        ])->get();
 
         return response()->json([
             'res' => true,
@@ -23,8 +29,14 @@ class PlanEstudioController extends Controller
 
     public function store(Request $request)
     {
+        $request->merge($this->normalizePlanEstudioInput($request));
+
         $validator = Validator::make($request->all(), [
-            "nombre"=> "required",
+            'nombre' => ['nullable', 'string', 'max:255'],
+            'id_prog_form' => ['required', 'integer', 'exists:programa_de_formacion,id'],
+            'id_curso' => ['required', 'integer', 'exists:curso,id'],
+            'id_modalidad' => ['required', 'integer', 'exists:modalidad_carrera,id'],
+            'id_calificacion' => ['required', 'integer', 'exists:calificacion,id'],
         ]);
 
         if ($validator->fails()) {
@@ -34,31 +46,37 @@ class PlanEstudioController extends Controller
             ], 400);
         }
 
-        $plan = PlanEstudio::create([
-            'nombre'=> $request->nombre,
-        ]);
-
-        //  manejar relación con programa de formación
-        if ($request->has('programa_de_formacion_id')) {
-
-            $prog = ProgFormacion::find($request->programa_de_formacion_id);
-
-            if (!$prog) {
-                return response()->json([
-                    'res' => false,
-                    'message' => 'El programa de formación no existe, se creó el plan pero no la relación'
-                ], 400);
-            }
-
-            PlanEstudioProgForm::create([
-                'plan_estudio_id' => $plan->id,
-                'programa_de_formacion_id' => $prog->id
-            ]);
+        if ($this->calificacionAsignadaAOtroPrograma($request->id_calificacion, $request->id_prog_form)) {
+            return response()->json([
+                'res' => false,
+                'message' => 'La calificación ya está asociada a otro programa de formación.'
+            ], 400);
         }
+
+        $plan = DB::transaction(function () use ($request) {
+            $plan = PlanEstudio::create([
+                'nombre'=> $request->nombre ?? 'Plan de estudio',
+                'id_prog_form' => $request->id_prog_form,
+                'id_curso' => $request->id_curso,
+                'id_modalidad' => $request->id_modalidad,
+                'id_calificacion' => $request->id_calificacion,
+            ]);
+
+            ProgFormacion::where('id', $request->id_prog_form)
+                ->update(['id_calificacion' => $request->id_calificacion]);
+
+            PlanEstudioProgForm::firstOrCreate([
+                'plan_estudio_id' => $plan->id,
+                'programa_de_formacion_id' => $request->id_prog_form,
+            ]);
+
+            return $plan;
+        });
 
         return response()->json([
             'res' => true,
-            'message' => 'Plan de estudio creado correctamente'
+            'message' => 'Plan de estudio creado correctamente',
+            'data' => $plan->load(['programaFormacion', 'curso', 'modalidad', 'calificacion'])
         ], 200);
     }
 
@@ -75,12 +93,13 @@ class PlanEstudioController extends Controller
 
         return response()->json([
             'res' => true,
-            'data' => $plan
+            'data' => $plan->load(['programaFormacion', 'curso', 'modalidad', 'calificacion'])
         ], 200);
     }
 
     public function update(Request $request, string $id)
     {
+        $request->merge($this->normalizePlanEstudioInput($request));
         $plan = PlanEstudio::find($id);
 
         if (!$plan) {
@@ -90,42 +109,87 @@ class PlanEstudioController extends Controller
             ], 400);
         }
 
-        //  manejar relación con programa
-        if ($request->has('programa_de_formacion_id')) {
+        $validator = Validator::make($request->all(), [
+            'nombre' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'id_prog_form' => ['sometimes', 'integer', 'exists:programa_de_formacion,id'],
+            'id_curso' => ['sometimes', 'integer', 'exists:curso,id'],
+            'id_modalidad' => ['sometimes', 'integer', 'exists:modalidad_carrera,id'],
+            'id_calificacion' => ['sometimes', 'integer', 'exists:calificacion,id'],
+        ]);
 
-            $prog = ProgFormacion::find($request->programa_de_formacion_id);
+        if ($validator->fails()) {
+            return response()->json([
+                'res' => false,
+                'message' => $validator->errors()
+            ], 400);
+        }
 
-            if (!$prog) {
-                return response()->json([
-                    'res' => false,
-                    'message' => 'Programa no encontrado'
-                ], 400);
-            }
+        $programaId = $request->id_prog_form ?? $plan->id_prog_form;
+        $calificacionId = $request->id_calificacion ?? $plan->id_calificacion;
 
-            $rel = PlanEstudioProgForm::where('plan_estudio_id', $plan->id)
-                ->where('programa_de_formacion_id', $prog->id)
-                ->first();
+        if ($programaId && $calificacionId && $this->calificacionAsignadaAOtroPrograma($calificacionId, $programaId)) {
+            return response()->json([
+                'res' => false,
+                'message' => 'La calificación ya está asociada a otro programa de formación.'
+            ], 400);
+        }
 
-            if (!$rel) {
-                PlanEstudioProgForm::create([
-                    'plan_estudio_id' => $plan->id,
-                    'programa_de_formacion_id' => $prog->id
-                ]);
+        $data = [];
+        foreach (['nombre', 'id_prog_form', 'id_curso', 'id_modalidad', 'id_calificacion'] as $field) {
+            if ($request->has($field)) {
+                $data[$field] = $request->$field;
             }
         }
 
-        // actualizar campos 
-        $data = [];
+        DB::transaction(function () use ($plan, $data, $programaId, $calificacionId) {
+            $plan->update($data);
+    
+            if ($programaId && $calificacionId) {
+                ProgFormacion::where('id', $programaId)->update(['id_calificacion' => $calificacionId]);
+            }
 
-        
-        if($request->has('nombre')) $data['nombre'] = $request->nombre;
-
-        $plan->update($data);
+            if ($programaId) {
+                PlanEstudioProgForm::firstOrCreate([
+                    'plan_estudio_id' => $plan->id,
+                    'programa_de_formacion_id' => $programaId,
+                ]);
+            }
+        });
 
         return response()->json([
             'res' => true,
-            'message' => 'Plan de estudio actualizado'
+            'message' => 'Plan de estudio actualizado',
+            'data' => $plan->fresh()->load(['programaFormacion', 'curso', 'modalidad', 'calificacion'])
         ], 200);
+    }
+
+    private function normalizePlanEstudioInput(Request $request): array
+    {
+        $aliases = [
+            'id_prog_form' => 'programa_de_formacion_id',
+            'id_curso' => 'curso_id',
+            'id_modalidad' => 'modalidad_id',
+            'id_calificacion' => 'calificacion_id',
+        ];
+
+        $data = [];
+
+        foreach ($aliases as $field => $alias) {
+            if ($request->filled($field)) {
+                $data[$field] = $request->input($field);
+            } elseif ($request->filled($alias)) {
+                $data[$field] = $request->input($alias);
+            }
+        }
+
+        return $data;
+    }
+
+    private function calificacionAsignadaAOtroPrograma(int $calificacionId, int $programaId): bool
+    {
+        return ProgFormacion::where('id_calificacion', $calificacionId)
+            ->where('id', '<>', $programaId)
+            ->exists();
     }
     
     public function destroy(string $id)
