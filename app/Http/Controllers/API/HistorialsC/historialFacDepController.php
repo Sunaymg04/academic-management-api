@@ -96,4 +96,33 @@ class historialFacDepController extends Controller
 
     return response()->json($departamentos);
 }
+
+public function facultadPorDepartamento($id)
+{
+    $facultad = DB::table('facultad_departamento')
+        ->join(
+            'facultad',
+            'facultad_departamento.id_facultad',
+            '=',
+            'facultad.id'
+        )
+        ->where('facultad_departamento.id_departamento', $id)
+        ->select(
+            'facultad.id',
+            'facultad.nombre'
+        )
+        ->first();
+
+    if (!$facultad) {
+        return response()->json([
+            'res' => false,
+            'message' => 'El departamento no tiene facultad asociada.'
+        ], 404);
+    }
+
+    return response()->json([
+        'res' => true,
+        'data' => $facultad
+    ], 200);
+}
 }

@@ -160,6 +160,10 @@ Route::delete('/calificacion/{id}', [CalificacionController::class, 'destroy']);
 Route::get('/progFormMod', [historialProgFormModCarController::class, 'index']);
 Route::post('/progFormMod', [historialProgFormModCarController::class, 'store']);
 Route::delete('/progFormMod/{idM}/{idP}', [historialProgFormModCarController::class, 'destroy']);
+Route::get('/programa/{id}/calificacion', [progFormController::class, 'calificacion']);
+Route::get('/progForm/{id}/calificacion', [progFormController::class, 'calificacion']);
+Route::get('/programa/{id}/modalidades', [historialProgFormModCarController::class, 'modalidadesPorPrograma']);
+Route::get('/progForm/{id}/modalidades', [historialProgFormModCarController::class, 'modalidadesPorPrograma']);
 
 //Rutas de curso
 Route::get('/cursos/{id_a_academico}', [CursoController::class, 'porAgno']);
@@ -310,6 +314,7 @@ Route::get('/ppa', [PPAController::class, 'index']);
 });
 
 Route::get('/facultad/{id}/departamentos', [historialFacDepController::class, 'departamentosPorFacultad']);
+Route::get('/departamento/{id}/facultad', [historialFacDepController::class, 'facultadPorDepartamento']);
 Route::get('/departamento/{id}/carreras', [historialDepProgFormController::class, 'carrerasPorDepartamento']);
 Route::get('/programa/{id}/anios', [anoAcademicoController::class, 'aniosPorPrograma']);
 Route::get('/anio/{id}/curso', [anoAcademicoController::class, 'cursoPorAnio']);

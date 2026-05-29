@@ -88,10 +88,35 @@ class historialDepProgFormController extends Controller
         ->where('departamento_prog_d_form.id_departamento', $id)
         ->select(
             'programa_de_formacion.id',
-            'programa_de_formacion.nombre'
+            'programa_de_formacion.nombre',
+            'programa_de_formacion.abreviatura'
         )
         ->get();
 
-    return response()->json($carreras);
+    $modalidades = DB::table('prog_form_modalidad_carrera as pfmc')
+        ->join('modalidad_carrera as mc', 'pfmc.id_modalidad', '=', 'mc.id')
+        ->whereIn('pfmc.id_prog_form', $carreras->pluck('id'))
+        ->select(
+            'pfmc.id_prog_form',
+            'mc.id',
+            'mc.nombre'
+        )
+        ->get()
+        ->groupBy('id_prog_form');
+
+    return response()->json(
+        $carreras->map(function ($carrera) use ($modalidades) {
+            $carrera->modalidades = ($modalidades[$carrera->id] ?? collect())
+                ->map(function ($modalidad) {
+                    return [
+                        'id' => $modalidad->id,
+                        'nombre' => $modalidad->nombre,
+                    ];
+                })
+                ->values();
+
+            return $carrera;
+        })
+    );
 }
 }

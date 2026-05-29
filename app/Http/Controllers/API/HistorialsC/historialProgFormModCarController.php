@@ -8,6 +8,7 @@ use App\Models\ProgFormacion;
 use App\Models\ModalidadCarrera;
 use App\Models\ProgFormModalidadCarrera;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use PHPUnit\Framework\Constraint\IsTrue;
 
@@ -73,6 +74,42 @@ class historialProgFormModCarController extends Controller
     {
 
     }
+
+    public function modalidadesPorPrograma($id)
+    {
+        $programa = ProgFormacion::find($id);
+
+        if (!$programa) {
+            return response()->json([
+                'res'=> false,
+                'message'=> 'No se encontró el programa de formación',
+                'status'=> 404
+            ], 404);
+        }
+
+        $modalidades = DB::table('prog_form_modalidad_carrera as pfmc')
+            ->join('modalidad_carrera as mc', 'pfmc.id_modalidad', '=', 'mc.id')
+            ->where('pfmc.id_prog_form', $id)
+            ->select(
+                'mc.id',
+                'mc.nombre'
+            )
+            ->orderBy('mc.nombre')
+            ->get();
+
+        return response()->json([
+            'res'=> true,
+            'data'=> [
+                'programa' => [
+                    'id' => $programa->id,
+                    'nombre' => $programa->nombre,
+                    'abreviatura' => $programa->abreviatura,
+                ],
+                'modalidades' => $modalidades,
+            ],
+        ], 200);
+    }
+
     public function update(Request $request, $idModalidad, $idProgForm)
     {
         $check = true;

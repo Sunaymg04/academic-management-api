@@ -84,6 +84,40 @@ class progFormController extends Controller
         ], 200);
     }
 
+    public function calificacion(string $id)
+    {
+        $pF = ProgFormacion::with('calificacion')->find($id);
+
+        if (!$pF) {
+            return response()->json([
+                'res'=> false,
+                'message'=> 'No se encontro el programa de formacion'
+            ], 404);
+        }
+
+        if (!$pF->calificacion) {
+            return response()->json([
+                'res'=> false,
+                'message'=> 'El programa de formacion no tiene calificacion asociada'
+            ], 404);
+        }
+
+        return response()->json([
+            'res'=> true,
+            'data'=> [
+                'programa' => [
+                    'id' => $pF->id,
+                    'nombre' => $pF->nombre,
+                    'abreviatura' => $pF->abreviatura,
+                ],
+                'calificacion' => [
+                    'id' => $pF->calificacion->id,
+                    'nombre' => $pF->calificacion->nombre,
+                ],
+            ]
+        ], 200);
+    }
+
     /**
      * Update the specified resource in storage.
      */
