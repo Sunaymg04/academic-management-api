@@ -23,6 +23,53 @@ class CurriculoController extends Controller
         ], 200);
     }
 
+    public function arbol()
+    {
+        $curriculos = Curriculo::with([
+            'disciplinas' => function ($query) {
+                $query->orderBy('nombre');
+            },
+            'disciplinas.asignaturas' => function ($query) {
+                $query->orderBy('nombre');
+            },
+            'disciplinas.asignaturas.aniosAcademicos' => function ($query) {
+                $query->orderBy('identificador');
+            },
+        ])->orderBy('nombre')->get();
+
+        $data = $curriculos->map(function ($curriculo) {
+            return [
+                'id' => $curriculo->id,
+                'nombre' => $curriculo->nombre,
+                'disciplinas' => $curriculo->disciplinas->map(function ($disciplina) {
+                    return [
+                        'id' => $disciplina->id,
+                        'nombre' => $disciplina->nombre,
+                        'fondo_tiempo' => $disciplina->fondo_tiempo,
+                        'asignaturas' => $disciplina->asignaturas->map(function ($asignatura) {
+                            return [
+                                'id' => $asignatura->id,
+                                'nombre' => $asignatura->nombre,
+                                'fondo_tiempo' => $asignatura->fondo_tiempo,
+                                'anios' => $asignatura->aniosAcademicos->map(function ($anio) {
+                                    return [
+                                        'id' => $anio->id,
+                                        'identificador' => $anio->identificador,
+                                    ];
+                                })->values(),
+                            ];
+                        })->values(),
+                    ];
+                })->values(),
+            ];
+        });
+
+        return response()->json([
+            'res' => true,
+            'data' => $data,
+        ], 200);
+    }
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [

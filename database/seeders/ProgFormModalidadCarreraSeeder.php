@@ -12,31 +12,34 @@ class ProgFormModalidadCarreraSeeder extends Seeder
 {
     public function run(): void
     {
-        $programaMatematica = ProgFormacion::where('abreviatura', 'M')->first();
+        $programas = ProgFormacion::whereIn('abreviatura', ['II', 'CC', 'CI'])->get();
 
-        if (!$programaMatematica) {
+        if ($programas->isEmpty()) {
             return;
         }
 
         $modalidades = ModalidadCarrera::whereIn('nombre', [
             'Curso Diurno',
             'Curso por Encuentros',
+            'Educación a Distancia',
         ])->get();
 
-        foreach ($modalidades as $modalidad) {
-            DB::table('prog_form_modalidad_carrera')->updateOrInsert(
-                [
-                    'id_modalidad' => $modalidad->id,
-                    'id_prog_form' => $programaMatematica->id,
-                ],
-                [
-                    'uuid' => Str::uuid(),
-                    'id_modalidad' => $modalidad->id,
-                    'id_prog_form' => $programaMatematica->id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]
-            );
+        foreach ($programas as $programa) {
+            foreach ($modalidades as $modalidad) {
+                DB::table('prog_form_modalidad_carrera')->updateOrInsert(
+                    [
+                        'id_modalidad' => $modalidad->id,
+                        'id_prog_form' => $programa->id,
+                    ],
+                    [
+                        'uuid' => Str::uuid(),
+                        'id_modalidad' => $modalidad->id,
+                        'id_prog_form' => $programa->id,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]
+                );
+            }
         }
     }
 }

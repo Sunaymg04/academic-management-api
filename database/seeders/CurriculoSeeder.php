@@ -16,13 +16,13 @@ class CurriculoSeeder extends Seeder
     public function run(): void
     {
         $curr1=Curriculo::create([
-            'nombre'=>'Curriculo Avanzado'
+            'nombre'=>'Curriculo Propio'
         ]);
         $curr2=Curriculo::create([
             'nombre'=>'Curriculo Base'
         ]);
         $curr3=Curriculo::create([
-            'nombre'=>'Curriculo Experimental'
+            'nombre'=>'Curriculo Optativo/Electivo'
         ]);
 
         PlanEstudio_Curriculo::create([

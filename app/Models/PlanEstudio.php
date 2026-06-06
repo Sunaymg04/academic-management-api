@@ -45,5 +45,15 @@ class PlanEstudio extends Model
     {
         return $this->belongsTo(Calificacion::class, 'id_calificacion');
     }
+
+    public function curriculos()
+    {
+        return $this->belongsToMany(
+            Curriculo::class,
+            'plan-estudio_curriculo',
+            'id_plan_estudio',
+            'id_curriculo'
+        );
+    }
    
 }

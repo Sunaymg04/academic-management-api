@@ -138,20 +138,43 @@ class UserAccessController extends Controller
 
     private function deactivateConflictingAccess(array $data): void
     {
-        $query = UserAppAccess::query()
+        // General base query for conflict deactivation
+        $baseQuery = UserAppAccess::query()
             ->where('application_code', $data['application_code'])
             ->where('role', $data['role'])
             ->where('active', true);
 
+        // Scoped deactivation for faculty-level roles
         if (in_array($data['role'], ['vicedecano_docente', 'decano'], true)) {
-            $query->where('facultad_id', $data['facultad_id']);
+            $baseQuery->where('facultad_id', $data['facultad_id'])->update(['active' => false]);
+            return;
         }
 
+        // Special handling for jefe_departamento:
+        // 1) Deactivate any existing jefe for the target department (other user).
+        // 2) Deactivate any existing jefe assignments for the same username (previous department).
         if ($data['role'] === 'jefe_departamento') {
-            $query->where('departamento_id', $data['departamento_id']);
+            // Deactivate current jefe of the department
+            UserAppAccess::query()
+                ->where('application_code', $data['application_code'])
+                ->where('role', 'jefe_departamento')
+                ->where('active', true)
+                ->where('departamento_id', $data['departamento_id'])
+                ->update(['active' => false]);
+
+            // Deactivate any previous jefe assignments for this username
+            UserAppAccess::query()
+                ->where('application_code', $data['application_code'])
+                ->where('role', 'jefe_departamento')
+                ->where('active', true)
+                ->where('username', $data['username'])
+                ->update(['active' => false]);
+
+            return;
         }
 
-        $query->update(['active' => false]);
+        // Fallback: deactivate any matching active entries
+        $baseQuery->update(['active' => false]);
     }
 
     private function validateRoleScope(array &$data)
