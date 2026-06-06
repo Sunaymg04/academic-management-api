@@ -18,10 +18,12 @@ class FacultadDepartamentoSeeder extends Seeder
 
         $depMat = Departamento::where('abreviatura', 'DMAT')->first();
         $depQui = Departamento::where('abreviatura', 'DQUI')->first();
+        $depComp = Departamento::where('abreviatura', 'DCOMP')->first();
         $depFis = Departamento::where('abreviatura', 'DFIS')->first();
         $relaciones = [
             ['facultad' => $matematica, 'departamento' => $depMat],
             ['facultad' => $matematica, 'departamento' => $depFis],
+            ['facultad' => $matematica, 'departamento' => $depComp],
             ['facultad' => $quimica, 'departamento' => $depQui],
         ];
 

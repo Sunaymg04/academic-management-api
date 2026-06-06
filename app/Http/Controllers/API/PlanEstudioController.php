@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\PlanEstudio;
 use App\Models\ProgFormacion;
 use App\Models\PlanEstudioProgForm;
+use App\Models\PlanEstudio_Curriculo;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -37,6 +38,8 @@ class PlanEstudioController extends Controller
             'id_curso' => ['required', 'integer', 'exists:curso,id'],
             'id_modalidad' => ['required', 'integer', 'exists:modalidad_carrera,id'],
             'id_calificacion' => ['required', 'integer', 'exists:calificacion,id'],
+            'id_curriculo' => ['sometimes', 'array'],
+            'id_curriculo.*' => ['integer', 'exists:curriculo,id'],
         ]);
 
         if ($validator->fails()) {
@@ -53,9 +56,14 @@ class PlanEstudioController extends Controller
             ], 400);
         }
 
-        $plan = DB::transaction(function () use ($request) {
+        $programa = ProgFormacion::find($request->id_prog_form);
+        $nombrePlan = $request->filled('nombre')
+            ? $request->nombre
+            : 'Plan de Estudio ' . $programa->nombre;
+
+        $plan = DB::transaction(function () use ($request, $nombrePlan) {
             $plan = PlanEstudio::create([
-                'nombre'=> $request->nombre ?? 'Plan de estudio',
+                'nombre'=> $nombrePlan,
                 'id_prog_form' => $request->id_prog_form,
                 'id_curso' => $request->id_curso,
                 'id_modalidad' => $request->id_modalidad,
@@ -70,13 +78,22 @@ class PlanEstudioController extends Controller
                 'programa_de_formacion_id' => $request->id_prog_form,
             ]);
 
+            $curriculos = array_values(array_unique($request->input('id_curriculo', [])));
+
+            foreach ($curriculos as $idCurriculo) {
+                PlanEstudio_Curriculo::firstOrCreate([
+                    'id_plan_estudio' => $plan->id,
+                    'id_curriculo' => $idCurriculo,
+                ]);
+            }
+
             return $plan;
         });
 
         return response()->json([
             'res' => true,
             'message' => 'Plan de estudio creado correctamente',
-            'data' => $plan->load(['programaFormacion', 'curso', 'modalidad', 'calificacion'])
+            'data' => $plan->load(['programaFormacion', 'curso', 'modalidad', 'calificacion', 'curriculos'])
         ], 200);
     }
 
@@ -93,7 +110,7 @@ class PlanEstudioController extends Controller
 
         return response()->json([
             'res' => true,
-            'data' => $plan->load(['programaFormacion', 'curso', 'modalidad', 'calificacion'])
+            'data' => $plan->load(['programaFormacion', 'curso', 'modalidad', 'calificacion', 'curriculos'])
         ], 200);
     }
 
@@ -159,7 +176,7 @@ class PlanEstudioController extends Controller
         return response()->json([
             'res' => true,
             'message' => 'Plan de estudio actualizado',
-            'data' => $plan->fresh()->load(['programaFormacion', 'curso', 'modalidad', 'calificacion'])
+            'data' => $plan->fresh()->load(['programaFormacion', 'curso', 'modalidad', 'calificacion', 'curriculos'])
         ], 200);
     }
 

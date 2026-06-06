@@ -262,6 +262,7 @@ Route::delete('/plan_estudio_prog_form', [PlanEstudioProgFormController::class, 
 
 //Rutas de Curriculo
 Route::get('/curriculo', [CurriculoController::class, 'index']);
+Route::get('/curriculo/arbol', [CurriculoController::class, 'arbol']);
 Route::post('/curriculo', [CurriculoController::class, 'store']);
 Route::get('/curriculo/{id}', [CurriculoController::class, 'show']);
 Route::put('/curriculo/{id}', [CurriculoController::class, 'update']);

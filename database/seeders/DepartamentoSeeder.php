@@ -23,5 +23,10 @@ class DepartamentoSeeder extends Seeder
             'nombre' => 'Departamento de Química',
             'abreviatura' => 'DQUI'
         ]);
+
+        Departamento::create([
+            'nombre' => 'Departamento de Computación',
+            'abreviatura' => 'DCOMP'
+        ]);
     }
 }

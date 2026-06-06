@@ -13,16 +13,19 @@ class DepartamentoProgFormSeeder extends Seeder
 {
     public function run()
     {
-        $departamentos = Departamento::whereIn('abreviatura', ['DMAT', 'DQUI', 'DFIS'])
+        $departamentos = Departamento::whereIn('abreviatura', ['DMAT', 'DQUI', 'DFIS', 'DCOMP'])
             ->pluck('id', 'abreviatura');
 
-        $programas = ProgFormacion::whereIn('abreviatura', ['M', 'LQ', 'F'])
+        $programas = ProgFormacion::whereIn('abreviatura', ['II', 'CC', 'CI', 'M', 'LQ', 'F'])
             ->pluck('id', 'abreviatura');
 
         $relaciones = [
             ['departamento' => 'DMAT', 'programa' => 'M'],
             ['departamento' => 'DQUI', 'programa' => 'LQ'],
             ['departamento' => 'DFIS', 'programa' => 'F'],
+            ['departamento' => 'DCOMP', 'programa' => 'II'],
+            ['departamento' => 'DCOMP', 'programa' => 'CC'],
+            ['departamento' => 'DCOMP', 'programa' => 'CI'],
         ];
 
         foreach ($relaciones as $relacion) {
