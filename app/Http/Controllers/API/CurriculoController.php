@@ -82,6 +82,8 @@ class CurriculoController extends Controller
                             'fondo_tiempo' => $asignatura->fondo_tiempo,
                             'horas_clase' => $asignatura->horas_clase ?? $asignatura->fondo_tiempo,
                             'horas_practica_laboral' => $asignatura->horas_practica_laboral ?? 0,
+                            'tiene_examen_final' => (bool) $asignatura->tiene_examen_final,
+                            'tiene_trabajo_curso' => (bool) $asignatura->tiene_trabajo_curso,
                             'anios' => $anios,
                         ];
                     })->filter()->values();

@@ -692,6 +692,8 @@ class PlanEstudioController extends Controller
                         'fondo_tiempo' => $horasClase + $horasPractica,
                         'horas_clase' => $horasClase,
                         'horas_practica_laboral' => $horasPractica,
+                        'tiene_examen_final' => (bool) ($asignatura['tiene_examen_final'] ?? false),
+                        'tiene_trabajo_curso' => (bool) ($asignatura['tiene_trabajo_curso'] ?? false),
                         'anios' => $this->nombresAniosDesdeAsignaturaPayload($asignatura),
                     ];
                 }
@@ -773,6 +775,8 @@ class PlanEstudioController extends Controller
                         'fondo_tiempo' => $this->totalHorasAsignaturaPayload($asignaturaData),
                         'horas_clase' => (int) ($asignaturaData['horas_clase'] ?? $asignatura->horas_clase ?? 0),
                         'horas_practica_laboral' => (int) ($asignaturaData['horas_practica_laboral'] ?? $asignatura->horas_practica_laboral ?? 0),
+                        'tiene_examen_final' => (bool) ($asignaturaData['tiene_examen_final'] ?? $asignatura->tiene_examen_final ?? false),
+                        'tiene_trabajo_curso' => (bool) ($asignaturaData['tiene_trabajo_curso'] ?? $asignatura->tiene_trabajo_curso ?? false),
                         'anios' => $anios,
                     ];
                 }
@@ -845,6 +849,8 @@ class PlanEstudioController extends Controller
             'fondo_tiempo' => $horasClase + $horasPractica,
             'horas_clase' => $horasClase,
             'horas_practica_laboral' => $horasPractica,
+            'tiene_examen_final' => (bool) ($asignaturaData['tiene_examen_final'] ?? false),
+            'tiene_trabajo_curso' => (bool) ($asignaturaData['tiene_trabajo_curso'] ?? false),
         ]);
     }
 
@@ -858,6 +864,8 @@ class PlanEstudioController extends Controller
             'fondo_tiempo' => $horasClase + $horasPractica,
             'horas_clase' => $horasClase,
             'horas_practica_laboral' => $horasPractica,
+            'tiene_examen_final' => (bool) ($asignaturaData['tiene_examen_final'] ?? $asignatura->tiene_examen_final ?? false),
+            'tiene_trabajo_curso' => (bool) ($asignaturaData['tiene_trabajo_curso'] ?? $asignatura->tiene_trabajo_curso ?? false),
         ]);
 
         return $asignatura;

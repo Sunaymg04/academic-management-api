@@ -29,6 +29,7 @@ use App\Http\Controllers\API\HistorialsC\PlanEstudioCurriculoController;
 use App\Http\Controllers\API\ModificacionController;
 use App\Http\Controllers\API\ProfesorController;
 use App\Http\Controllers\API\PlanEstudioController;
+use App\Http\Controllers\API\PlanEstudioExcelController;
 use App\Http\Controllers\API\PlanEstudioProgFormController;
 use App\Http\Controllers\API\PlanNotificationController;
 use App\Http\Controllers\API\VersionController;
@@ -60,11 +61,12 @@ use App\Http\Controllers\CoordinadorCarreraController;
 use App\Http\Controllers\ProfesorGuiaController;
 use App\Http\Controllers\AlumnoAyudanteController;
 use App\Http\Controllers\DocumentoController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserAccessController;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout']);
+Route::get('/user', [AuthController::class, 'user']);
 
 Route::get('/users/{username}/access', [UserAccessController::class, 'userAccess']);
 Route::get('/access', [UserAccessController::class, 'index']);
@@ -72,6 +74,8 @@ Route::post('/access/assign', [UserAccessController::class, 'assign']);
 Route::post('/access/admin/transfer', [UserAccessController::class, 'transferAdmin']);
 Route::get('/notifications', [PlanNotificationController::class, 'index']);
 Route::post('/notifications/read', [PlanNotificationController::class, 'markRead']);
+Route::get('/plan_estudio/{id}/excel-preview', [PlanEstudioExcelController::class, 'preview']);
+Route::get('/plan_estudio/{id}/excel', [PlanEstudioExcelController::class, 'download']);
 
 //Rutas provincia
 Route::get('/provincia', [provinciaController::class, 'index']);

@@ -67,6 +67,8 @@ class asignaturaController extends Controller
             "nombre"=> "required",
             "horas_clase"=>"nullable|integer|min:0",
             "horas_practica_laboral"=>"nullable|integer|min:0",
+            "tiene_examen_final"=>"nullable|boolean",
+            "tiene_trabajo_curso"=>"nullable|boolean",
             "id_a_academico"=>"required|array",
         ]);
 
@@ -85,6 +87,8 @@ class asignaturaController extends Controller
             'fondo_tiempo' => $horasClase + $horasPractica,
             'horas_clase' => $horasClase,
             'horas_practica_laboral' => $horasPractica,
+            'tiene_examen_final' => $request->boolean('tiene_examen_final'),
+            'tiene_trabajo_curso' => $request->boolean('tiene_trabajo_curso'),
         ]);
 
         //  manejar relación con DISCIPLINA
@@ -190,6 +194,14 @@ class asignaturaController extends Controller
             $data['fondo_tiempo'] = $horasClase + $horasPractica;
             $data['horas_clase'] = $horasClase;
             $data['horas_practica_laboral'] = $horasPractica;
+        }
+
+        if ($request->has('tiene_examen_final')) {
+            $data['tiene_examen_final'] = $request->boolean('tiene_examen_final');
+        }
+
+        if ($request->has('tiene_trabajo_curso')) {
+            $data['tiene_trabajo_curso'] = $request->boolean('tiene_trabajo_curso');
         }
 
         $asignatura->update($data);

@@ -15,10 +15,17 @@ class Asignatura extends Model
         'fondo_tiempo',
         'horas_clase',
         'horas_practica_laboral',
+        'tiene_examen_final',
+        'tiene_trabajo_curso',
     ];
     protected $hidden = [
         'created_at',
         'updated_at'
+    ];
+
+    protected $casts = [
+        'tiene_examen_final' => 'boolean',
+        'tiene_trabajo_curso' => 'boolean',
     ];
 
     public function disciplinas(): BelongsToMany

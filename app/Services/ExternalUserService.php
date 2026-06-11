@@ -6,6 +6,47 @@ use Illuminate\Support\Facades\Http;
 
 class ExternalUserService
 {
+    public function validateCredentials(?string $username, ?string $password): ?array
+    {
+        $username = trim((string) $username);
+        $password = (string) $password;
+
+        if ($username === '' || $password === '') {
+            return [
+                'valid' => false,
+                'message' => 'Usuario o contrasena incorrectos.',
+            ];
+        }
+
+        $baseUrl = rtrim((string) config('services.users_api.base_url'), '/');
+
+        try {
+            $response = Http::acceptJson()
+                ->timeout(2)
+                ->post($baseUrl . '/users/validate', [
+                    'username' => $username,
+                    'password' => $password,
+                ]);
+
+            if ($response->status() === 401) {
+                return [
+                    'valid' => false,
+                    'message' => $response->json('message') ?? 'Usuario o contrasena incorrectos.',
+                ];
+            }
+
+            if (! $response->successful()) {
+                return null;
+            }
+
+            $payload = $response->json();
+
+            return is_array($payload) ? $payload : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     public function resolveLogUsername(?string $value): string
     {
         $value = trim((string) $value);
