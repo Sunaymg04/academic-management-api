@@ -216,15 +216,152 @@ En Windows:
 cd C:\Users\TU_USUARIO\Desktop\api-laravel
 ```
 
-## 5. Instalar dependencias PHP
+## 5. Que hacer dentro de la raiz del proyecto
 
-Desde la raiz del proyecto:
+Cuando ya estan instaladas las herramientas principales, hay que trabajar dentro de la carpeta raiz del proyecto. La carpeta raiz es la carpeta donde se ven estos archivos:
+
+```txt
+artisan
+composer.json
+composer.lock
+package.json
+.env.example
+routes/
+app/
+database/
+```
+
+Si no ves `artisan` y `composer.json`, no estas en la carpeta correcta.
+
+### 5.1. Abrir la terminal en la carpeta correcta
+
+En Windows:
+
+1. Abrir la carpeta del proyecto.
+2. Dar clic derecho dentro de la carpeta.
+3. Seleccionar `Abrir en Terminal` o `Open in Terminal`.
+4. Comprobar la ubicacion con:
+
+```powershell
+dir
+```
+
+Debe aparecer algo parecido a:
+
+```txt
+artisan
+composer.json
+package.json
+```
+
+Tambien puedes entrar manualmente:
+
+```powershell
+cd C:\Users\TU_USUARIO\Desktop\api-laravel
+```
+
+En macOS o Linux:
+
+```bash
+cd /ruta/donde/esta/api-laravel
+ls
+```
+
+Debe aparecer:
+
+```txt
+artisan
+composer.json
+package.json
+```
+
+### 5.2. Verificar que las herramientas se reconocen
+
+Dentro de la raiz del proyecto ejecutar:
+
+```bash
+php -v
+composer --version
+node -v
+npm -v
+```
+
+Si alguno dice que el comando no existe, no sigas todavia. Primero hay que instalarlo o arreglar el `PATH`.
+
+En Windows con XAMPP, si `php` no se reconoce:
+
+1. Buscar la carpeta `C:\xampp\php`.
+2. Copiar esa ruta.
+3. Abrir `Variables de entorno`.
+4. Editar la variable `Path`.
+5. Agregar:
+
+```txt
+C:\xampp\php
+```
+
+6. Cerrar y abrir de nuevo la terminal.
+7. Probar:
+
+```powershell
+php -v
+```
+
+### 5.3. Activar extensiones PHP necesarias en XAMPP
+
+En Windows con XAMPP:
+
+1. Abrir el Panel de Control de XAMPP.
+2. En la fila de Apache, presionar `Config`.
+3. Abrir `PHP (php.ini)`.
+4. Buscar estas lineas y asegurarse de que no tengan `;` al inicio:
+
+```ini
+extension=curl
+extension=fileinfo
+extension=gd
+extension=intl
+extension=mbstring
+extension=mysqli
+extension=openssl
+extension=pdo_mysql
+extension=pdo_sqlite
+extension=zip
+```
+
+Si alguna aparece asi:
+
+```ini
+;extension=pdo_mysql
+```
+
+Debe quedar asi:
+
+```ini
+extension=pdo_mysql
+```
+
+Guardar el archivo y reiniciar Apache desde XAMPP. Aunque esta API se levanta con `php artisan serve`, reiniciar ayuda a que PHP tome la configuracion.
+
+En macOS o Linux normalmente estas extensiones se instalan con los paquetes indicados en la seccion de requisitos.
+
+### 5.4. Instalar dependencias PHP del proyecto
+
+Esto crea la carpeta `vendor`, que contiene las librerias de Laravel y del proyecto.
+
+Ejecutar:
 
 ```bash
 composer install
 ```
 
-Si Composer muestra errores por extensiones faltantes, instalar la extension indicada y repetir:
+Si termina bien, debe existir una carpeta llamada:
+
+```txt
+vendor/
+```
+
+Si Composer muestra errores por extensiones faltantes, instalar o activar la extension indicada y repetir:
 
 ```bash
 composer install
@@ -237,12 +374,18 @@ composer install
 composer dump-autoload
 ```
 
-## 6. Instalar dependencias de Node
+### 5.5. Instalar dependencias de Node del proyecto
 
 Aunque la API funciona principalmente con PHP, el proyecto incluye Vite. Para tener todo completo:
 
 ```bash
 npm install
+```
+
+Esto crea la carpeta:
+
+```txt
+node_modules/
 ```
 
 Para compilar assets:
@@ -259,7 +402,7 @@ npm run dev
 
 Si solo se va a probar la API desde Postman y no se usaran vistas, `npm run dev` no es obligatorio.
 
-## 7. Crear el archivo de ambiente
+### 5.6. Crear el archivo `.env`
 
 Laravel usa un archivo `.env` para la configuracion local. Si no existe:
 
@@ -273,31 +416,129 @@ En Windows PowerShell:
 Copy-Item .env.example .env
 ```
 
+Despues de este paso debe existir un archivo llamado:
+
+```txt
+.env
+```
+
+Ese archivo es privado de cada laptop. No todas las computadoras tienen el mismo usuario de base de datos, contrasena o puerto, por eso se configura ahi.
+
 Generar la llave de la aplicacion:
 
 ```bash
 php artisan key:generate
 ```
 
-## 8. Configurar la base de datos
+Esto llena la variable `APP_KEY` dentro del `.env`. Si `APP_KEY` queda vacia, Laravel no funciona bien.
 
-### Opcion recomendada: MySQL o MariaDB
+### 5.7. Abrir y editar el archivo `.env`
 
-Crear una base de datos vacia.
+Abrir `.env` con VS Code, Bloc de notas, Notepad++ o el editor que usen.
 
-Entrar a MySQL:
+En VS Code:
+
+```bash
+code .env
+```
+
+Si `code` no funciona, abrir VS Code normal y arrastrar el archivo `.env`.
+
+Hay que revisar estas partes:
+
+```env
+APP_NAME="Academic Appointment Management API"
+APP_ENV=local
+APP_KEY=base64:AQUI_DEBE_HABER_UNA_LLAVE_GENERADA
+APP_DEBUG=true
+APP_URL=http://127.0.0.1:8000
+```
+
+No copiar literalmente `AQUI_DEBE_HABER_UNA_LLAVE_GENERADA`. Esa linea la crea el comando:
+
+```bash
+php artisan key:generate
+```
+
+### 5.8. Configurar base de datos con XAMPP en Windows
+
+Esta es la opcion recomendada para Windows porque fue la usada por el equipo.
+
+1. Abrir XAMPP.
+2. Iniciar `MySQL`.
+3. Abrir el navegador.
+4. Entrar a:
+
+```txt
+http://localhost/phpmyadmin
+```
+
+5. Dar clic en `Nueva` o `New`.
+6. Crear una base de datos con este nombre:
+
+```txt
+api_academica
+```
+
+7. Elegir cotejamiento:
+
+```txt
+utf8mb4_unicode_ci
+```
+
+8. Dar clic en `Crear`.
+
+Luego editar `.env` y dejar la base de datos asi:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=api_academica
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Importante:
+
+- En XAMPP normalmente el usuario es `root`.
+- En XAMPP normalmente la contrasena esta vacia.
+- `DB_PASSWORD=` debe quedar vacio, sin espacios y sin comillas.
+- El nombre `api_academica` debe ser exactamente igual al de phpMyAdmin.
+
+### 5.9. Configurar base de datos en macOS o Linux
+
+Si se usa MySQL o MariaDB por terminal:
 
 ```bash
 mysql -u root -p
 ```
 
-Crear la base de datos:
+Crear la base:
 
 ```sql
 CREATE DATABASE api_academica CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+EXIT;
 ```
 
-Crear un usuario opcional:
+Editar `.env`:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=api_academica
+DB_USERNAME=root
+DB_PASSWORD=TU_CONTRASENA_DE_MYSQL
+```
+
+Si el usuario `root` no tiene contrasena, dejar:
+
+```env
+DB_PASSWORD=
+```
+
+Si prefieres crear un usuario propio:
 
 ```sql
 CREATE USER 'api_user'@'localhost' IDENTIFIED BY 'api_password';
@@ -306,40 +547,20 @@ FLUSH PRIVILEGES;
 EXIT;
 ```
 
-Editar `.env`:
+Y en `.env`:
 
 ```env
-APP_NAME="Academic Appointment Management API"
-APP_ENV=local
-APP_DEBUG=true
-APP_URL=http://127.0.0.1:8000
-
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=api_academica
 DB_USERNAME=api_user
 DB_PASSWORD=api_password
-
-SESSION_DRIVER=database
-QUEUE_CONNECTION=database
-CACHE_STORE=database
-
-USERS_API_URL=http://127.0.0.1:8001/api
 ```
 
-Si se usa el usuario `root` sin contrasena en Laragon/XAMPP:
+### 5.10. Configurar SQLite si no se quiere usar MySQL
 
-```env
-DB_USERNAME=root
-DB_PASSWORD=
-```
+SQLite es mas simple porque no necesita servidor de base de datos, pero para presentar el proyecto se recomienda XAMPP/MySQL.
 
-### Opcion rapida: SQLite
+Crear el archivo:
 
-SQLite puede servir para pruebas locales simples, pero para una demostracion completa se recomienda MySQL/MariaDB.
-
-Crear el archivo de base de datos:
+En macOS o Linux:
 
 ```bash
 touch database/database.sqlite
@@ -358,7 +579,7 @@ DB_CONNECTION=sqlite
 DB_DATABASE=database/database.sqlite
 ```
 
-Comentar o eliminar estas variables si estaban configuradas para MySQL:
+Y comentar o borrar las variables de MySQL:
 
 ```env
 # DB_HOST=127.0.0.1
@@ -367,7 +588,180 @@ Comentar o eliminar estas variables si estaban configuradas para MySQL:
 # DB_PASSWORD=
 ```
 
-## 9. Configurar la API externa de usuarios
+### 5.11. Configurar la API externa de usuarios
+
+Este proyecto usa otra API para validar el login. En el `.env` hay que revisar:
+
+```env
+USERS_API_URL=http://127.0.0.1:8001/api
+```
+
+Si van a probar login, esa otra API debe estar levantada en esa direccion.
+
+Si no tienen esa API externa encendida, esta API igual puede levantar y muchos endpoints pueden responder, pero el login puede devolver `503`.
+
+### 5.12. Configuracion final recomendada del `.env`
+
+Para Windows con XAMPP, una configuracion local tipica seria:
+
+```env
+APP_NAME="Academic Appointment Management API"
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://127.0.0.1:8000
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=api_academica
+DB_USERNAME=root
+DB_PASSWORD=
+
+SESSION_DRIVER=database
+QUEUE_CONNECTION=database
+CACHE_STORE=database
+
+FILESYSTEM_DISK=local
+USERS_API_URL=http://127.0.0.1:8001/api
+```
+
+No borrar `APP_KEY` si ya fue generada.
+
+### 5.13. Limpiar configuracion despues de editar `.env`
+
+Cada vez que se cambia `.env`, ejecutar:
+
+```bash
+php artisan optimize:clear
+```
+
+Esto evita que Laravel use datos viejos guardados en cache.
+
+### 5.14. Crear las tablas de la base de datos
+
+Ejecutar:
+
+```bash
+php artisan migrate
+```
+
+Si la base esta vacia y es una instalacion desde cero, tambien se puede usar:
+
+```bash
+php artisan migrate:fresh
+```
+
+Advertencia: `migrate:fresh` borra las tablas existentes. Usarlo solo en una base de datos de prueba o desarrollo.
+
+### 5.15. Cargar datos iniciales
+
+Ejecutar:
+
+```bash
+php artisan db:seed
+```
+
+O en una instalacion limpia:
+
+```bash
+php artisan migrate:fresh --seed
+```
+
+### 5.16. Preparar almacenamiento de archivos
+
+Ejecutar:
+
+```bash
+php artisan storage:link
+```
+
+Si dice que el enlace ya existe, no hay problema.
+
+### 5.17. Probar que Laravel esta bien instalado
+
+Ejecutar:
+
+```bash
+php artisan about
+```
+
+Tambien se pueden correr las pruebas:
+
+```bash
+php artisan test
+```
+
+### 5.18. Levantar la API
+
+Ejecutar:
+
+```bash
+php artisan serve
+```
+
+Debe aparecer algo parecido a:
+
+```txt
+Server running on [http://127.0.0.1:8000].
+```
+
+No cierres esa terminal mientras estes usando la API.
+
+Abrir otra terminal si necesitas ejecutar otros comandos.
+
+### 5.19. Probar la API en el navegador o Postman
+
+Abrir:
+
+```txt
+http://127.0.0.1:8000/api/provincia
+```
+
+Si devuelve texto en formato JSON, la API esta funcionando.
+
+En Postman:
+
+- Metodo: `GET`
+- URL: `http://127.0.0.1:8000/api/provincia`
+- Header:
+
+```txt
+Accept: application/json
+```
+
+### 5.20. Orden exacto de comandos para una laptop nueva
+
+Desde la raiz del proyecto:
+
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan optimize:clear
+php artisan migrate:fresh --seed
+php artisan storage:link
+php artisan test
+php artisan serve
+```
+
+En Windows PowerShell, cambiar solo el comando de copiar `.env`:
+
+```powershell
+composer install
+npm install
+Copy-Item .env.example .env
+php artisan key:generate
+php artisan optimize:clear
+php artisan migrate:fresh --seed
+php artisan storage:link
+php artisan test
+php artisan serve
+```
+
+Recordatorio: antes de `php artisan migrate:fresh --seed`, ya debe existir la base de datos `api_academica` y el `.env` debe tener bien los datos de conexion.
+
+## 6. Detalle de la API externa de usuarios
 
 El login de este proyecto no valida usuarios directamente en esta base de datos. Usa un servicio externo configurado con:
 
@@ -410,7 +804,7 @@ Si esa API externa no esta levantada o la URL esta mal, el login de esta API res
 
 Para probar el resto de endpoints que no dependan de login, se puede levantar esta API sin el servicio externo. Para probar login completo, hay que levantar tambien la API de usuarios o configurar `USERS_API_URL` con la direccion correcta.
 
-## 10. Ejecutar migraciones
+## 7. Ejecutar migraciones
 
 Con la base de datos ya creada y el `.env` configurado:
 
@@ -426,7 +820,7 @@ php artisan migrate:fresh
 
 Advertencia: `migrate:fresh` borra todas las tablas de la base de datos configurada. Usarlo solo en desarrollo o en una base de datos de prueba.
 
-## 11. Cargar datos iniciales
+## 8. Cargar datos iniciales
 
 Para insertar datos de prueba y catalogos:
 
@@ -442,7 +836,7 @@ php artisan migrate:fresh --seed
 
 Este proyecto tiene seeders para programas de formacion, anos academicos, provincias, asignaturas, cursos, modalidades, calificaciones, usuarios/accesos, facultades, departamentos, estudiantes, profesores, PPA, TDPP, grupos, sectores estrategicos y otros catalogos.
 
-## 12. Crear enlace de almacenamiento
+## 9. Crear enlace de almacenamiento
 
 El proyecto genera y guarda documentos/logos en `storage`. Crear el enlace publico:
 
@@ -452,7 +846,7 @@ php artisan storage:link
 
 Si el comando dice que el enlace ya existe, no pasa nada.
 
-## 13. Limpiar y reconstruir cache
+## 10. Limpiar y reconstruir cache
 
 Despues de cambiar `.env` o configuraciones:
 
@@ -471,7 +865,7 @@ php artisan config:cache
 
 En desarrollo, si se cambian variables muchas veces, se puede trabajar sin `config:cache`.
 
-## 14. Levantar el servidor de la API
+## 11. Levantar el servidor de la API
 
 Desde la raiz del proyecto:
 
@@ -497,7 +891,7 @@ La base de la API sera:
 http://127.0.0.1:8000/api
 ```
 
-## 15. Probar que la API responde
+## 12. Probar que la API responde
 
 Abrir en navegador:
 
@@ -519,7 +913,7 @@ Probar con Postman:
 
 Si todo esta bien, debe responder JSON.
 
-## 16. Probar login
+## 13. Probar login
 
 Solo funcionara si la API externa de usuarios esta configurada y levantada.
 
@@ -573,7 +967,7 @@ API externa no disponible:
 }
 ```
 
-## 17. Probar rutas principales
+## 14. Probar rutas principales
 
 Listar rutas disponibles:
 
@@ -606,7 +1000,7 @@ Ejemplo con curl:
 curl -H "Accept: application/json" http://127.0.0.1:8000/api/facultad
 ```
 
-## 18. Conectar un frontend
+## 15. Conectar un frontend
 
 Si existe un frontend Vue u otro cliente, configurar su URL base de API como:
 
@@ -634,7 +1028,7 @@ Las llamadas deben apuntar a:
 http://127.0.0.1:8000/api/...
 ```
 
-## 19. Comandos diarios de desarrollo
+## 16. Comandos diarios de desarrollo
 
 Levantar API:
 
@@ -678,7 +1072,7 @@ Reiniciar base de datos con datos:
 php artisan migrate:fresh --seed
 ```
 
-## 20. Validacion final de instalacion
+## 17. Validacion final de instalacion
 
 Antes de decir que la API esta lista, comprobar:
 
@@ -696,7 +1090,7 @@ Antes de decir que la API esta lista, comprobar:
 12. Si se va a usar login, `USERS_API_URL` apunta a una API de usuarios funcionando.
 13. `POST /api/login` responde correctamente con usuarios validos.
 
-## 21. Errores comunes y soluciones
+## 18. Errores comunes y soluciones
 
 ### Error: `No application encryption key has been specified`
 
@@ -860,7 +1254,7 @@ Revisar:
 4. No hay error de puerto ocupado.
 5. CORS esta activo para `api/*`.
 
-## 22. Instalacion limpia resumida
+## 19. Instalacion limpia resumida
 
 Estos son los comandos principales para una instalacion nueva:
 
@@ -883,7 +1277,7 @@ php artisan migrate:fresh --seed
 php artisan serve
 ```
 
-## 23. Recomendacion para demostraciones
+## 20. Recomendacion para demostraciones
 
 Para que la API funcione bien en cualquier laptop durante una presentacion:
 
@@ -919,7 +1313,7 @@ Y probar:
 http://127.0.0.1:8002/api/provincia
 ```
 
-## 24. Comando de prueba final
+## 21. Comando de prueba final
 
 Con el servidor levantado:
 
