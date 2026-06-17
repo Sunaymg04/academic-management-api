@@ -74,16 +74,20 @@ npm -v
 
 Opcion recomendada:
 
-1. Instalar Laragon desde https://laragon.org/download.
-2. Activar Apache/Nginx y MySQL desde Laragon.
-3. Instalar Composer desde https://getcomposer.org/download.
-4. Instalar Node.js LTS desde https://nodejs.org.
-5. Instalar Git desde https://git-scm.com/download/win.
+1. Instalar XAMPP desde https://www.apachefriends.org.
+2. Abrir el Panel de Control de XAMPP.
+3. Iniciar el servicio de MySQL desde XAMPP.
+4. Usar el PHP incluido con XAMPP o instalar PHP aparte si se prefiere.
+5. Instalar Composer desde https://getcomposer.org/download.
+6. Instalar Node.js LTS desde https://nodejs.org.
+7. Instalar Git desde https://git-scm.com/download/win.
+
+Esta es la opcion recomendada porque fue la usada durante el desarrollo y las pruebas del proyecto. XAMPP facilita tener MySQL y PHP listos en una misma herramienta, lo que reduce problemas de instalacion en laptops diferentes.
 
 Alternativa:
 
-1. Instalar XAMPP.
-2. Usar el PHP que trae XAMPP.
+1. Instalar Laragon desde https://laragon.org/download.
+2. Activar Apache/Nginx y MySQL desde Laragon.
 3. Asegurarse de que `php` este disponible en la terminal.
 
 Comprobar en PowerShell:
@@ -97,7 +101,13 @@ npm -v
 git --version
 ```
 
-Si `php` no se reconoce, hay que agregar la carpeta de PHP al `PATH`. En Laragon suele estar en una ruta parecida a:
+Si `php` no se reconoce, hay que agregar la carpeta de PHP al `PATH`. En XAMPP suele estar en:
+
+```txt
+C:\xampp\php
+```
+
+En Laragon suele estar en una ruta parecida a:
 
 ```txt
 C:\laragon\bin\php\php-8.x.x
@@ -877,11 +887,12 @@ php artisan serve
 
 Para que la API funcione bien en cualquier laptop durante una presentacion:
 
-1. Usar MySQL/MariaDB en vez de depender de una base remota.
-2. Tener una copia del proyecto con `composer install` ya ejecutado.
-3. Tener una copia del `.env` de ejemplo lista, sin contrasenas reales.
-4. Tener los seeders cargados.
-5. Probar antes estos endpoints:
+1. En Windows, instalar XAMPP como primera opcion, porque fue la herramienta usada para preparar y probar el proyecto.
+2. Usar el MySQL de XAMPP en vez de depender de una base remota.
+3. Tener una copia del proyecto con `composer install` ya ejecutado.
+4. Tener una copia del `.env` de ejemplo lista, sin contrasenas reales.
+5. Tener los seeders cargados.
+6. Probar antes estos endpoints:
 
 ```txt
 GET /api/provincia
@@ -892,11 +903,11 @@ GET /api/ppa
 GET /api/alumno-ayudante
 ```
 
-6. Si se va a mostrar login, levantar tambien la API externa de usuarios.
-7. Si no se va a mostrar login, explicar que el login depende de `USERS_API_URL`.
-8. Llevar Postman/Insomnia con una coleccion preparada.
-9. Confirmar que el puerto 8000 esta libre.
-10. Si el puerto esta ocupado, usar:
+7. Si se va a mostrar login, levantar tambien la API externa de usuarios.
+8. Si no se va a mostrar login, explicar que el login depende de `USERS_API_URL`.
+9. Llevar Postman/Insomnia con una coleccion preparada.
+10. Confirmar que el puerto 8000 esta libre.
+11. Si el puerto esta ocupado, usar:
 
 ```bash
 php artisan serve --port=8002
@@ -917,4 +928,3 @@ curl -H "Accept: application/json" http://127.0.0.1:8000/api/provincia
 ```
 
 Si responde JSON, la API esta corriendo correctamente.
-
