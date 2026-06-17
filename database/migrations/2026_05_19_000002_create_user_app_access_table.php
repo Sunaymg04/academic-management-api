@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('application_code');
             $table->enum('role', [
                 'admin',
-                'vicedecano_docente',
+                'vicerrector_docente',
                 'decano',
                 'jefe_departamento',
                 'rector',

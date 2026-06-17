@@ -106,6 +106,10 @@ class PlanEstudioController extends Controller
                 ]);
             }
 
+            $plan->update([
+                'estructura_snapshot' => $this->snapshotPlan($plan->fresh(['curriculos'])),
+            ]);
+
             return $plan;
         });
 
@@ -233,10 +237,10 @@ class PlanEstudioController extends Controller
         ], 200);
     }
 
-    public function solicitudesVicedecano(Request $request)
+    public function solicitudesVicerrector(Request $request)
     {
         $planIds = DB::table('plan-estudio as pe')
-            ->where('pe.estado', 'enviado_vicedecano')
+            ->whereIn('pe.estado', ['enviado_vicerrector', 'enviado_vicedecano'])
             ->whereIn('pe.tipo_plan', ['original', 'modificacion'])
             ->pluck('pe.id');
 
@@ -259,14 +263,19 @@ class PlanEstudioController extends Controller
         ], 200);
     }
 
-    public function historialSolicitudesVicedecano(Request $request)
+    public function historialSolicitudesVicerrector(Request $request)
     {
         $planIds = DB::table('plan-estudio as pe')
             ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('plan_notifications as pn')
                     ->whereColumn('pn.plan_estudio_id', 'pe.id')
-                    ->whereIn('pn.type', ['plan_nuevo_enviado_vicedecano', 'plan_modificacion_enviada_vicedecano']);
+                    ->whereIn('pn.type', [
+                        'plan_nuevo_enviado_vicerrector',
+                        'plan_modificacion_enviada_vicerrector',
+                        'plan_nuevo_enviado_vicedecano',
+                        'plan_modificacion_enviada_vicedecano',
+                    ]);
             })
             ->pluck('pe.id');
 
@@ -348,18 +357,18 @@ class PlanEstudioController extends Controller
         }
 
         DB::transaction(function () use ($plan, $request) {
-            $plan->update(['estado' => 'enviado_vicedecano']);
+            $plan->update(['estado' => 'enviado_vicerrector']);
 
             if ($plan->modificacion) {
-                $plan->modificacion->update(['estado' => 'enviada_vicedecano']);
+                $plan->modificacion->update(['estado' => 'enviada_vicerrector']);
             }
 
-            $this->notificarVicedecanosSolicitudPlan($plan->fresh(), $request->input('username'));
+            $this->notificarVicerrectoresSolicitudPlan($plan->fresh(), $request->input('username'));
         });
 
         return response()->json([
             'res' => true,
-            'message' => 'Solicitud aprobada por el decano y enviada al vicedecano docente.',
+            'message' => 'Solicitud aprobada por el decano y enviada al vicerrector docente.',
             'data' => $plan->fresh()->load([
                 'programaFormacion',
                 'curso',
@@ -372,7 +381,7 @@ class PlanEstudioController extends Controller
         ], 200);
     }
 
-    public function aprobarVicedecano(Request $request, string $id)
+    public function aprobarVicerrector(Request $request, string $id)
     {
         $plan = PlanEstudio::with(['modificacion', 'planOrigen'])->find($id);
 
@@ -383,10 +392,10 @@ class PlanEstudioController extends Controller
             ], 404);
         }
 
-        if ($plan->estado !== 'enviado_vicedecano') {
+        if (!in_array($plan->estado, ['enviado_vicerrector', 'enviado_vicedecano'], true)) {
             return response()->json([
                 'res' => false,
-                'message' => 'Esta solicitud no está enviada al vicedecano docente.',
+                'message' => 'Esta solicitud no está enviada al vicerrector docente.',
             ], 422);
         }
 
@@ -395,6 +404,8 @@ class PlanEstudioController extends Controller
             $estructura = is_array($snapshot) ? ($snapshot['estructura'] ?? null) : null;
 
             if (is_array($estructura)) {
+                $this->preservarSnapshotsVersionesActuales((int) $plan->id_prog_form, (int) $plan->id);
+
                 $materializacionRequest = new Request([
                     'id_prog_form' => $plan->id_prog_form,
                     'id_curso' => $plan->id_curso,
@@ -412,11 +423,17 @@ class PlanEstudioController extends Controller
                 $plan->modificacion->update([
                     'estructura_snapshot' => $estructuraMaterializada,
                 ]);
+
+                $plan->update([
+                    'estructura_snapshot' => $estructuraMaterializada,
+                ]);
+            } else {
+                $this->preservarSnapshotsVersionesActuales((int) $plan->id_prog_form, (int) $plan->id);
             }
 
             PlanEstudio::where('id_prog_form', $plan->id_prog_form)
                 ->where('id', '<>', $plan->id)
-                ->whereIn('estado', ['vigente', 'esperando_aprobacion', 'modificado_esperando_aprobacion', 'enviado_decano', 'enviado_vicedecano'])
+                ->whereIn('estado', ['vigente', 'esperando_aprobacion', 'modificado_esperando_aprobacion', 'enviado_decano', 'enviado_vicerrector'])
                 ->update(['estado' => 'version_anterior']);
 
             ProgFormacion::where('id', $plan->id_prog_form)
@@ -432,13 +449,13 @@ class PlanEstudioController extends Controller
             }
 
             $planActual = $plan->fresh();
-            $this->notificarJefesRespuestaSolicitud($planActual, 'aprobada', $request->input('username'), 'vicedecano');
-            $this->notificarDecanosRespuestaVicedecano($planActual, 'aprobada', $request->input('username'));
+            $this->notificarJefesRespuestaSolicitud($planActual, 'aprobada', $request->input('username'), 'vicerrector');
+            $this->notificarDecanosRespuestaVicerrector($planActual, 'aprobada', $request->input('username'));
         });
 
         return response()->json([
             'res' => true,
-            'message' => 'Solicitud aprobada por el vicedecano docente. El plan queda vigente.',
+            'message' => 'Solicitud aprobada por el vicerrector docente. El plan queda vigente.',
             'data' => $plan->fresh()->load([
                 'programaFormacion',
                 'curso',
@@ -451,7 +468,7 @@ class PlanEstudioController extends Controller
         ], 200);
     }
 
-    public function cancelarVicedecano(Request $request, string $id)
+    public function cancelarVicerrector(Request $request, string $id)
     {
         $plan = PlanEstudio::with('modificacion')->find($id);
 
@@ -462,10 +479,10 @@ class PlanEstudioController extends Controller
             ], 404);
         }
 
-        if ($plan->estado !== 'enviado_vicedecano') {
+        if (!in_array($plan->estado, ['enviado_vicerrector', 'enviado_vicedecano'], true)) {
             return response()->json([
                 'res' => false,
-                'message' => 'Esta solicitud no está enviada al vicedecano docente.',
+                'message' => 'Esta solicitud no está enviada al vicerrector docente.',
             ], 422);
         }
 
@@ -481,13 +498,13 @@ class PlanEstudioController extends Controller
             }
 
             $planActual = $plan->fresh();
-            $this->notificarJefesRespuestaSolicitud($planActual, 'cancelada', $request->input('username'), 'vicedecano');
-            $this->notificarDecanosRespuestaVicedecano($planActual, 'cancelada', $request->input('username'));
+            $this->notificarJefesRespuestaSolicitud($planActual, 'cancelada', $request->input('username'), 'vicerrector');
+            $this->notificarDecanosRespuestaVicerrector($planActual, 'cancelada', $request->input('username'));
         });
 
         return response()->json([
             'res' => true,
-            'message' => 'Solicitud rechazada por el vicedecano docente.',
+            'message' => 'Solicitud rechazada por el vicerrector docente.',
             'data' => $plan->fresh()->load(['modificacion']),
         ], 200);
     }
@@ -611,6 +628,12 @@ class PlanEstudioController extends Controller
                 PlanEstudio_Curriculo::firstOrCreate([
                     'id_plan_estudio' => $planModificado->id,
                     'id_curriculo' => $idCurriculo,
+                ]);
+            }
+
+            if ($estructuraSnapshot) {
+                $planModificado->update([
+                    'estructura_snapshot' => $estructuraSnapshot,
                 ]);
             }
 
@@ -1074,6 +1097,20 @@ class PlanEstudioController extends Controller
         return $this->estructuraSnapshotDesdeRequest($snapshotRequest);
     }
 
+    private function preservarSnapshotsVersionesActuales(int $programaId, int $planActualId): void
+    {
+        PlanEstudio::where('id_prog_form', $programaId)
+            ->where('id', '<>', $planActualId)
+            ->whereNull('estructura_snapshot')
+            ->whereIn('estado', ['vigente', 'esperando_aprobacion', 'modificado_esperando_aprobacion', 'enviado_decano', 'enviado_vicerrector', 'enviado_vicedecano'])
+            ->get()
+            ->each(function (PlanEstudio $plan) {
+                $plan->update([
+                    'estructura_snapshot' => $this->snapshotPlan($plan),
+                ]);
+            });
+    }
+
     private function snapshotPlan(PlanEstudio $plan): array
     {
         $plan->loadMissing(['curriculos', 'programaFormacion', 'curso', 'modalidad', 'calificacion']);
@@ -1347,7 +1384,7 @@ class PlanEstudioController extends Controller
         }
     }
 
-    private function notificarVicedecanosSolicitudPlan(PlanEstudio $plan, ?string $senderUsername): void
+    private function notificarVicerrectoresSolicitudPlan(PlanEstudio $plan, ?string $senderUsername): void
     {
         $contexto = $this->contextoAcademicoPlan($plan);
 
@@ -1356,7 +1393,7 @@ class PlanEstudioController extends Controller
         }
 
         $destinatarios = UserAppAccess::where('application_code', UserAppAccess::APPLICATION_GESTION_PLAN_ESTUDIO)
-            ->where('role', 'vicedecano_docente')
+            ->where('role', 'vicerrector_docente')
             ->where('active', true)
             ->pluck('username')
             ->filter()
@@ -1367,7 +1404,7 @@ class PlanEstudioController extends Controller
             PlanNotification::create([
                 'recipient_username' => $username,
                 'sender_username' => $senderUsername,
-                'type' => $esPlanNuevo ? 'plan_nuevo_enviado_vicedecano' : 'plan_modificacion_enviada_vicedecano',
+                'type' => $esPlanNuevo ? 'plan_nuevo_enviado_vicerrector' : 'plan_modificacion_enviada_vicerrector',
                 'title' => $esPlanNuevo
                     ? 'Nuevo plan aprobado por decano'
                     : 'Modificacion aprobada por decano',
@@ -1413,7 +1450,7 @@ class PlanEstudioController extends Controller
         $titulo = $aprobada
             ? ($esPlanNuevo ? 'Plan de estudio aprobado' : 'Modificacion aprobada')
             : ($esPlanNuevo ? 'Plan de estudio rechazado' : 'Modificacion cancelada');
-        $actorLabel = $actor === 'vicedecano' ? 'El vicedecano docente' : 'El decano';
+        $actorLabel = $actor === 'vicerrector' ? 'El vicerrector docente' : 'El decano';
         $cuerpo = $aprobada
             ? $actorLabel . ' aprobo ' . ($esPlanNuevo ? 'el nuevo plan ' : 'la modificacion del plan ') . $plan->nombre . '. El plan queda vigente.'
             : $actorLabel . ' rechazo ' . ($esPlanNuevo ? 'el nuevo plan ' : 'la modificacion del plan ') . $plan->nombre . '.';
@@ -1440,7 +1477,7 @@ class PlanEstudioController extends Controller
         }
     }
 
-    private function notificarDecanosRespuestaVicedecano(PlanEstudio $plan, string $estado, ?string $senderUsername): void
+    private function notificarDecanosRespuestaVicerrector(PlanEstudio $plan, string $estado, ?string $senderUsername): void
     {
         $contexto = $this->contextoAcademicoPlan($plan);
 
@@ -1449,7 +1486,12 @@ class PlanEstudioController extends Controller
         }
 
         $destinatarios = PlanNotification::where('plan_estudio_id', $plan->id)
-            ->whereIn('type', ['plan_nuevo_enviado_vicedecano', 'plan_modificacion_enviada_vicedecano'])
+            ->whereIn('type', [
+                'plan_nuevo_enviado_vicerrector',
+                'plan_modificacion_enviada_vicerrector',
+                'plan_nuevo_enviado_vicedecano',
+                'plan_modificacion_enviada_vicedecano',
+            ])
             ->whereNotNull('sender_username')
             ->pluck('sender_username')
             ->filter()
@@ -1474,14 +1516,14 @@ class PlanEstudioController extends Controller
                 'recipient_username' => $username,
                 'sender_username' => $senderUsername,
                 'type' => $aprobada
-                    ? ($esPlanNuevo ? 'plan_nuevo_aprobado_vicedecano' : 'plan_modificacion_aprobada_vicedecano')
-                    : ($esPlanNuevo ? 'plan_nuevo_rechazado_vicedecano' : 'plan_modificacion_cancelada_vicedecano'),
+                    ? ($esPlanNuevo ? 'plan_nuevo_aprobado_vicerrector' : 'plan_modificacion_aprobada_vicerrector')
+                    : ($esPlanNuevo ? 'plan_nuevo_rechazado_vicerrector' : 'plan_modificacion_cancelada_vicerrector'),
                 'title' => $aprobada
-                    ? ($esPlanNuevo ? 'Plan aprobado por vicedecano' : 'Modificacion aprobada por vicedecano')
-                    : ($esPlanNuevo ? 'Plan rechazado por vicedecano' : 'Modificacion rechazada por vicedecano'),
+                    ? ($esPlanNuevo ? 'Plan aprobado por vicerrector' : 'Modificacion aprobada por vicerrector')
+                    : ($esPlanNuevo ? 'Plan rechazado por vicerrector' : 'Modificacion rechazada por vicerrector'),
                 'body' => $aprobada
-                    ? 'El vicedecano docente aprobo ' . ($esPlanNuevo ? 'el nuevo plan ' : 'la modificacion del plan ') . $plan->nombre . '. El plan queda vigente.'
-                    : 'El vicedecano docente rechazo ' . ($esPlanNuevo ? 'el nuevo plan ' : 'la modificacion del plan ') . $plan->nombre . '.',
+                    ? 'El vicerrector docente aprobo ' . ($esPlanNuevo ? 'el nuevo plan ' : 'la modificacion del plan ') . $plan->nombre . '. El plan queda vigente.'
+                    : 'El vicerrector docente rechazo ' . ($esPlanNuevo ? 'el nuevo plan ' : 'la modificacion del plan ') . $plan->nombre . '.',
                 'plan_estudio_id' => $plan->id,
                 'data' => [
                     'estado' => $estado,

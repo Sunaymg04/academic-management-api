@@ -135,6 +135,12 @@ storage/
 
 ##  Installation
 
+For a complete step-by-step setup guide for Windows, macOS, and Linux, see:
+
+```txt
+MANUAL_INSTALACION.md
+```
+
 Clone the repository:
 
 ```bash
@@ -228,4 +234,3 @@ The system addresses issues such as:
 ##  Author
 
 Developed by Dayana Rojas
-

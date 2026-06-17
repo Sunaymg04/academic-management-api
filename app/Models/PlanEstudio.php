@@ -18,10 +18,15 @@ class PlanEstudio extends Model
         'estado',
         'tipo_plan',
         'plan_origen_id',
+        'estructura_snapshot',
     ];
     protected $hidden = [
         'created_at',
         'updated_at'
+    ];
+
+    protected $casts = [
+        'estructura_snapshot' => 'array',
     ];
 
     public function versiones()

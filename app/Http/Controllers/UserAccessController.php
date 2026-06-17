@@ -144,7 +144,7 @@ class UserAccessController extends Controller
             ->where('role', $data['role'])
             ->where('active', true);
 
-        if ($data['role'] === 'vicedecano_docente') {
+        if ($data['role'] === 'vicerrector_docente') {
             $baseQuery->update(['active' => false]);
             return;
         }
@@ -212,7 +212,7 @@ class UserAccessController extends Controller
             return null;
         }
 
-        if ($data['role'] === 'vicedecano_docente') {
+        if ($data['role'] === 'vicerrector_docente') {
             $data['facultad_id'] = null;
             $data['departamento_id'] = null;
 

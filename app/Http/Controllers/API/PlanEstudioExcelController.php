@@ -37,6 +37,7 @@ class PlanEstudioExcelController extends Controller
             'curso',
             'modalidad',
             'calificacion',
+            'modificacion',
             'curriculos.disciplinas.asignaturas.aniosAcademicos',
         ])->findOrFail($id);
 
@@ -50,6 +51,43 @@ class PlanEstudioExcelController extends Controller
             ])
             ->values();
 
+        $snapshot = $plan->modificacion?->estructura_snapshot;
+        $planSnapshot = $plan->estructura_snapshot;
+        $snapshotStructure = is_array($snapshot) ? ($snapshot['estructura'] ?? null) : null;
+        $snapshotStructure ??= is_array($planSnapshot) ? ($planSnapshot['estructura'] ?? null) : null;
+        $snapshotStructure ??= is_array($planSnapshot) ? $this->structureFromSnapshotDetails($planSnapshot) : null;
+
+        $rows = is_array($snapshotStructure)
+            ? $this->rowsFromSnapshotStructure($snapshotStructure, $anios)
+            : $this->rowsFromCurrentStructure($plan, $anios);
+
+        $sections = $this->buildSections($rows);
+
+        return [
+            'plan' => [
+                'id' => $plan->id,
+                'nombre' => $plan->nombre,
+                'programa' => $plan->programaFormacion?->nombre,
+                'curso' => $plan->curso?->nombre ?? $plan->curso?->curso,
+                'modalidad' => $plan->modalidad?->nombre,
+                'calificacion' => $plan->calificacion?->nombre,
+            ],
+            'anios' => $anios,
+            'rows' => $rows->values(),
+            'sections' => $sections,
+            'totales' => [
+                'fondo_tiempo' => $rows->where('type', 'asignatura')->sum('fondo_tiempo'),
+                'horas_clase' => $rows->where('type', 'asignatura')->sum('horas_clase'),
+                'horas_practica_laboral' => $rows->where('type', 'asignatura')->sum('horas_practica_laboral'),
+                'examenes_finales' => $rows->where('type', 'asignatura')->sum(fn ($row) => $row['tiene_examen_final'] ? 1 : 0),
+                'trabajos_curso' => $rows->where('type', 'asignatura')->sum(fn ($row) => $row['tiene_trabajo_curso'] ? 1 : 0),
+                'anios' => $this->sumarAnios($rows->where('type', 'asignatura'), $anios),
+            ],
+        ];
+    }
+
+    private function rowsFromCurrentStructure(PlanEstudio $plan, Collection $anios): Collection
+    {
         $rows = collect();
 
         foreach ($plan->curriculos as $curriculo) {
@@ -117,29 +155,159 @@ class PlanEstudioExcelController extends Controller
             }
         }
 
-        $sections = $this->buildSections($rows);
+        return $rows;
+    }
 
-        return [
-            'plan' => [
-                'id' => $plan->id,
-                'nombre' => $plan->nombre,
-                'programa' => $plan->programaFormacion?->nombre,
-                'curso' => $plan->curso?->nombre ?? $plan->curso?->curso,
-                'modalidad' => $plan->modalidad?->nombre,
-                'calificacion' => $plan->calificacion?->nombre,
-            ],
-            'anios' => $anios,
-            'rows' => $rows->values(),
-            'sections' => $sections,
-            'totales' => [
-                'fondo_tiempo' => $rows->where('type', 'asignatura')->sum('fondo_tiempo'),
-                'horas_clase' => $rows->where('type', 'asignatura')->sum('horas_clase'),
-                'horas_practica_laboral' => $rows->where('type', 'asignatura')->sum('horas_practica_laboral'),
-                'examenes_finales' => $rows->where('type', 'asignatura')->sum(fn ($row) => $row['tiene_examen_final'] ? 1 : 0),
-                'trabajos_curso' => $rows->where('type', 'asignatura')->sum(fn ($row) => $row['tiene_trabajo_curso'] ? 1 : 0),
-                'anios' => $this->sumarAnios($rows->where('type', 'asignatura'), $anios),
-            ],
-        ];
+    private function rowsFromSnapshotStructure(array $structure, Collection $anios): Collection
+    {
+        $rows = collect();
+
+        foreach ($structure as $curriculo) {
+            $rows->push([
+                'type' => 'curriculo',
+                'nombre' => mb_strtoupper((string) ($curriculo['nombre'] ?? '')),
+                'fondo_tiempo' => 0,
+                'horas_clase' => 0,
+                'horas_practica_laboral' => 0,
+                'tiene_examen_final' => false,
+                'tiene_trabajo_curso' => false,
+                'anios' => [],
+            ]);
+
+            foreach ($this->sortByName($curriculo['disciplinas'] ?? []) as $disciplina) {
+                $asignaturas = collect($this->sortByName($disciplina['asignaturas'] ?? []))->values();
+
+                if ($asignaturas->isEmpty()) {
+                    continue;
+                }
+
+                $disciplinaRowIndex = $rows->count();
+                $rows->push([
+                    'type' => 'disciplina',
+                    'nombre' => $disciplina['nombre'] ?? 'Disciplina',
+                    'fondo_tiempo' => 0,
+                    'horas_clase' => 0,
+                    'horas_practica_laboral' => 0,
+                    'tiene_examen_final' => false,
+                    'tiene_trabajo_curso' => false,
+                    'anios' => [],
+                ]);
+
+                foreach ($asignaturas as $asignatura) {
+                    $horasClase = (int) ($asignatura['horas_clase'] ?? $asignatura['fondo_tiempo'] ?? 0);
+                    $horasPractica = (int) ($asignatura['horas_practica_laboral'] ?? 0);
+                    $totalHoras = (int) ($asignatura['fondo_tiempo'] ?? ($horasClase + $horasPractica));
+
+                    $rows->push([
+                        'type' => 'asignatura',
+                        'nombre' => $asignatura['nombre'] ?? 'Asignatura',
+                        'fondo_tiempo' => $totalHoras,
+                        'horas_clase' => $horasClase,
+                        'horas_practica_laboral' => $horasPractica,
+                        'tiene_examen_final' => (bool) ($asignatura['tiene_examen_final'] ?? false),
+                        'tiene_trabajo_curso' => (bool) ($asignatura['tiene_trabajo_curso'] ?? false),
+                        'anios' => $this->horasPorAnioDesdeSnapshot($asignatura, $anios, $totalHoras),
+                    ]);
+                }
+
+                $asignaturasRows = $rows
+                    ->slice($disciplinaRowIndex + 1)
+                    ->filter(fn ($row) => $row['type'] === 'asignatura');
+
+                $rows[$disciplinaRowIndex] = [
+                    ...$rows[$disciplinaRowIndex],
+                    'fondo_tiempo' => $asignaturasRows->sum('fondo_tiempo'),
+                    'horas_clase' => $asignaturasRows->sum('horas_clase'),
+                    'horas_practica_laboral' => $asignaturasRows->sum('horas_practica_laboral'),
+                    'tiene_examen_final' => (bool) $asignaturasRows->sum(fn ($row) => $row['tiene_examen_final'] ? 1 : 0),
+                    'tiene_trabajo_curso' => (bool) $asignaturasRows->sum(fn ($row) => $row['tiene_trabajo_curso'] ? 1 : 0),
+                    'anios' => $this->sumarAnios($asignaturasRows, $anios),
+                ];
+            }
+        }
+
+        return $rows;
+    }
+
+    private function sortByName(array $items): array
+    {
+        return collect($items)
+            ->sortBy(fn ($item) => mb_strtoupper((string) ($item['nombre'] ?? '')))
+            ->values()
+            ->all();
+    }
+
+    private function structureFromSnapshotDetails(array $snapshot): ?array
+    {
+        if (empty($snapshot['curriculos_detalle']) || empty($snapshot['disciplinas_detalle'])) {
+            return null;
+        }
+
+        $curriculos = [];
+
+        foreach ($snapshot['curriculos_detalle'] as $curriculoId => $curriculo) {
+            $curriculos[(string) $curriculoId] = [
+                'id' => is_numeric($curriculoId) ? (int) $curriculoId : $curriculoId,
+                'nombre' => $curriculo['nombre'] ?? $curriculo['label'] ?? 'Currículo',
+                'disciplinas' => [],
+            ];
+        }
+
+        foreach ($snapshot['disciplinas_detalle'] as $disciplinaKey => $disciplina) {
+            [$curriculoId, $disciplinaId] = array_pad(explode(':', (string) $disciplinaKey), 2, null);
+
+            if (!$curriculoId || !isset($curriculos[$curriculoId])) {
+                continue;
+            }
+
+            $curriculos[$curriculoId]['disciplinas'][(string) $disciplinaId] = [
+                'id' => is_numeric($disciplinaId) ? (int) $disciplinaId : $disciplinaId,
+                'nombre' => $disciplina['nombre'] ?? $disciplina['label'] ?? 'Disciplina',
+                'asignaturas' => [],
+            ];
+        }
+
+        foreach (($snapshot['asignaturas_detalle'] ?? []) as $asignaturaKey => $asignatura) {
+            [$curriculoId, $disciplinaId, $asignaturaId] = array_pad(explode(':', (string) $asignaturaKey), 3, null);
+
+            if (
+                !$curriculoId ||
+                !$disciplinaId ||
+                !isset($curriculos[$curriculoId]['disciplinas'][(string) $disciplinaId])
+            ) {
+                continue;
+            }
+
+            $curriculos[$curriculoId]['disciplinas'][(string) $disciplinaId]['asignaturas'][] = [
+                'id' => is_numeric($asignaturaId) ? (int) $asignaturaId : $asignaturaId,
+                'nombre' => $asignatura['nombre'] ?? 'Asignatura',
+                'fondo_tiempo' => (int) ($asignatura['fondo_tiempo'] ?? 0),
+                'horas_clase' => (int) ($asignatura['horas_clase'] ?? $asignatura['fondo_tiempo'] ?? 0),
+                'horas_practica_laboral' => (int) ($asignatura['horas_practica_laboral'] ?? 0),
+                'tiene_examen_final' => (bool) ($asignatura['tiene_examen_final'] ?? false),
+                'tiene_trabajo_curso' => (bool) ($asignatura['tiene_trabajo_curso'] ?? false),
+                'anios' => collect($asignatura['anios'] ?? [])
+                    ->map(fn ($anio) => is_array($anio) ? $anio : ['identificador' => (string) $anio])
+                    ->values()
+                    ->all(),
+            ];
+        }
+
+        return collect($curriculos)
+            ->map(function ($curriculo) {
+                $curriculo['disciplinas'] = collect($curriculo['disciplinas'])
+                    ->map(function ($disciplina) {
+                        $disciplina['asignaturas'] = array_values($disciplina['asignaturas']);
+
+                        return $disciplina;
+                    })
+                    ->values()
+                    ->all();
+
+                return $curriculo;
+            })
+            ->values()
+            ->all();
     }
 
     private function buildSections(Collection $rows): array
@@ -193,6 +361,43 @@ class PlanEstudioExcelController extends Controller
 
         return $anios->mapWithKeys(function ($anio) use ($ids, $horasPorAnio, &$resto) {
             if (! $ids->contains((int) $anio['id'])) {
+                return [$anio['identificador'] => 0];
+            }
+
+            $valor = $horasPorAnio + ($resto > 0 ? 1 : 0);
+            $resto = max(0, $resto - 1);
+
+            return [$anio['identificador'] => $valor];
+        })->all();
+    }
+
+    private function horasPorAnioDesdeSnapshot(array $asignatura, Collection $anios, int $horas): array
+    {
+        $selectedIds = collect($asignatura['id_a_academico'] ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->values();
+
+        $selectedNames = collect($asignatura['anios'] ?? [])
+            ->map(function ($anio) {
+                if (is_array($anio)) {
+                    return (string) ($anio['identificador'] ?? '');
+                }
+
+                return (string) $anio;
+            })
+            ->filter()
+            ->values();
+
+        $selectedCount = max($selectedIds->count() + ($selectedIds->isEmpty() ? $selectedNames->count() : 0), 1);
+        $horasPorAnio = intdiv($horas, $selectedCount);
+        $resto = $horas % $selectedCount;
+
+        return $anios->mapWithKeys(function ($anio) use ($selectedIds, $selectedNames, $horasPorAnio, &$resto) {
+            $matchesId = $selectedIds->contains((int) $anio['id']);
+            $matchesName = $selectedIds->isEmpty() && $selectedNames->contains((string) $anio['identificador']);
+
+            if (!$matchesId && !$matchesName) {
                 return [$anio['identificador'] => 0];
             }
 

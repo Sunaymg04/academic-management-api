@@ -12,7 +12,7 @@ class UserAppAccess extends Model
     public const ROLES_BY_APPLICATION = [
         self::APPLICATION_GESTION_ROLES => [
             'admin',
-            'vicedecano_docente',
+            'vicerrector_docente',
             'decano',
             'jefe_departamento',
         ],
@@ -21,7 +21,7 @@ class UserAppAccess extends Model
             'jefe_departamento',
             'decano',
             'rector',
-            'vicedecano_docente',
+            'vicerrector_docente',
         ],
     ];
 

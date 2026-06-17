@@ -13,7 +13,7 @@ return new class extends Migration
         }
 
         if (DB::getDriverName() === 'mysql') {
-            DB::statement("ALTER TABLE user_app_access MODIFY role ENUM('admin', 'vicedecano_docente', 'decano', 'jefe_departamento', 'rector') NOT NULL");
+            DB::statement("ALTER TABLE user_app_access MODIFY role ENUM('admin', 'vicerrector_docente', 'decano', 'jefe_departamento', 'rector') NOT NULL");
         }
     }
 
@@ -24,7 +24,7 @@ return new class extends Migration
         }
 
         if (DB::getDriverName() === 'mysql') {
-            DB::statement("ALTER TABLE user_app_access MODIFY role ENUM('admin', 'vicedecano_docente', 'decano', 'jefe_departamento') NOT NULL");
+            DB::statement("ALTER TABLE user_app_access MODIFY role ENUM('admin', 'vicerrector_docente', 'decano', 'jefe_departamento') NOT NULL");
         }
     }
 };
