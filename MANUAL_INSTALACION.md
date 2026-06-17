@@ -13,7 +13,7 @@ Tecnologias principales:
 - Composer
 - MySQL o MariaDB recomendado
 - SQLite opcional para pruebas locales simples
-- Node.js y npm para compilar assets si se usan vistas o recursos de Vite
+- Node.js y npm solo son opcionales si se quieren compilar recursos de Vite; no hacen falta para probar la API
 - Laravel Sanctum instalado como dependencia
 
 ## 2. Requisitos antes de empezar
@@ -23,8 +23,6 @@ Instalar estos programas antes de abrir el proyecto:
 - PHP 8.2 o superior
 - Composer 2.x
 - MySQL 8.x o MariaDB 10.x
-- Node.js 18 o superior
-- npm
 - Git
 - Un editor de codigo, por ejemplo VS Code
 - Postman, Insomnia, Thunder Client o curl para probar la API
@@ -61,12 +59,7 @@ Para verificar Composer:
 composer --version
 ```
 
-Para verificar Node y npm:
-
-```bash
-node -v
-npm -v
-```
+Node.js y npm no son obligatorios para esta API. Si solo se va a levantar el backend y probar endpoints en Postman, se pueden ignorar.
 
 ## 3. Instalacion de requisitos por sistema operativo
 
@@ -79,8 +72,7 @@ Opcion recomendada:
 3. Iniciar el servicio de MySQL desde XAMPP.
 4. Usar el PHP incluido con XAMPP o instalar PHP aparte si se prefiere.
 5. Instalar Composer desde https://getcomposer.org/download.
-6. Instalar Node.js LTS desde https://nodejs.org.
-7. Instalar Git desde https://git-scm.com/download/win.
+6. Instalar Git desde https://git-scm.com/download/win.
 
 Esta es la opcion recomendada porque fue la usada durante el desarrollo y las pruebas del proyecto. XAMPP facilita tener MySQL y PHP listos en una misma herramienta, lo que reduce problemas de instalacion en laptops diferentes.
 
@@ -96,8 +88,6 @@ Comprobar en PowerShell:
 php -v
 composer --version
 mysql --version
-node -v
-npm -v
 git --version
 ```
 
@@ -124,7 +114,7 @@ Instalar Homebrew si no esta instalado:
 Instalar dependencias:
 
 ```bash
-brew install php composer mysql node git
+brew install php composer mysql git
 ```
 
 Iniciar MySQL:
@@ -139,8 +129,6 @@ Comprobar:
 php -v
 composer --version
 mysql --version
-node -v
-npm -v
 git --version
 ```
 
@@ -165,12 +153,6 @@ Instalar Composer:
 sudo apt install composer
 ```
 
-Instalar Node.js y npm:
-
-```bash
-sudo apt install nodejs npm
-```
-
 Iniciar MySQL:
 
 ```bash
@@ -184,8 +166,6 @@ Comprobar:
 php -v
 composer --version
 mysql --version
-node -v
-npm -v
 git --version
 ```
 
@@ -202,7 +182,7 @@ Si se copia por memoria USB, ZIP, Telegram u otro medio:
 
 1. Descomprimir el proyecto en una carpeta sin caracteres raros.
 2. Evitar rutas con tildes o nombres muy largos.
-3. Abrir una terminal dentro de la carpeta raiz, donde estan `artisan`, `composer.json` y `package.json`.
+3. Abrir una terminal dentro de la carpeta raiz, donde estan `artisan` y `composer.json`.
 
 Ejemplo:
 
@@ -282,8 +262,6 @@ Dentro de la raiz del proyecto ejecutar:
 ```bash
 php -v
 composer --version
-node -v
-npm -v
 ```
 
 Si alguno dice que el comando no existe, no sigas todavia. Primero hay que instalarlo o arreglar el `PATH`.
@@ -374,35 +352,7 @@ composer install
 composer dump-autoload
 ```
 
-### 5.5. Instalar dependencias de Node del proyecto
-
-Aunque la API funciona principalmente con PHP, el proyecto incluye Vite. Para tener todo completo:
-
-```bash
-npm install
-```
-
-Esto crea la carpeta:
-
-```txt
-node_modules/
-```
-
-Para compilar assets:
-
-```bash
-npm run build
-```
-
-Para desarrollo con Vite:
-
-```bash
-npm run dev
-```
-
-Si solo se va a probar la API desde Postman y no se usaran vistas, `npm run dev` no es obligatorio.
-
-### 5.6. Crear el archivo `.env`
+### 5.5. Crear el archivo `.env`
 
 Laravel usa un archivo `.env` para la configuracion local. Si no existe:
 
@@ -432,7 +382,7 @@ php artisan key:generate
 
 Esto llena la variable `APP_KEY` dentro del `.env`. Si `APP_KEY` queda vacia, Laravel no funciona bien.
 
-### 5.7. Abrir y editar el archivo `.env`
+### 5.6. Abrir y editar el archivo `.env`
 
 Abrir `.env` con VS Code, Bloc de notas, Notepad++ o el editor que usen.
 
@@ -460,7 +410,7 @@ No copiar literalmente `AQUI_DEBE_HABER_UNA_LLAVE_GENERADA`. Esa linea la crea e
 php artisan key:generate
 ```
 
-### 5.8. Configurar base de datos con XAMPP en Windows
+### 5.7. Configurar base de datos con XAMPP en Windows
 
 Esta es la opcion recomendada para Windows porque fue la usada por el equipo.
 
@@ -506,7 +456,7 @@ Importante:
 - `DB_PASSWORD=` debe quedar vacio, sin espacios y sin comillas.
 - El nombre `api_academica` debe ser exactamente igual al de phpMyAdmin.
 
-### 5.9. Configurar base de datos en macOS o Linux
+### 5.8. Configurar base de datos en macOS o Linux
 
 Si se usa MySQL o MariaDB por terminal:
 
@@ -554,7 +504,7 @@ DB_USERNAME=api_user
 DB_PASSWORD=api_password
 ```
 
-### 5.10. Configurar SQLite si no se quiere usar MySQL
+### 5.9. Configurar SQLite si no se quiere usar MySQL
 
 SQLite es mas simple porque no necesita servidor de base de datos, pero para presentar el proyecto se recomienda XAMPP/MySQL.
 
@@ -588,7 +538,7 @@ Y comentar o borrar las variables de MySQL:
 # DB_PASSWORD=
 ```
 
-### 5.11. Configurar la API externa de usuarios
+### 5.10. Configurar la API externa de usuarios
 
 Este proyecto usa otra API para validar el login. En el `.env` hay que revisar:
 
@@ -600,7 +550,7 @@ Si van a probar login, esa otra API debe estar levantada en esa direccion.
 
 Si no tienen esa API externa encendida, esta API igual puede levantar y muchos endpoints pueden responder, pero el login puede devolver `503`.
 
-### 5.12. Configuracion final recomendada del `.env`
+### 5.11. Configuracion final recomendada del `.env`
 
 Para Windows con XAMPP, una configuracion local tipica seria:
 
@@ -627,7 +577,7 @@ USERS_API_URL=http://127.0.0.1:8001/api
 
 No borrar `APP_KEY` si ya fue generada.
 
-### 5.13. Limpiar configuracion despues de editar `.env`
+### 5.12. Limpiar configuracion despues de editar `.env`
 
 Cada vez que se cambia `.env`, ejecutar:
 
@@ -637,7 +587,7 @@ php artisan optimize:clear
 
 Esto evita que Laravel use datos viejos guardados en cache.
 
-### 5.14. Crear las tablas de la base de datos
+### 5.13. Crear las tablas de la base de datos
 
 Ejecutar:
 
@@ -653,7 +603,7 @@ php artisan migrate:fresh
 
 Advertencia: `migrate:fresh` borra las tablas existentes. Usarlo solo en una base de datos de prueba o desarrollo.
 
-### 5.15. Cargar datos iniciales
+### 5.14. Cargar datos iniciales
 
 Ejecutar:
 
@@ -667,7 +617,7 @@ O en una instalacion limpia:
 php artisan migrate:fresh --seed
 ```
 
-### 5.16. Preparar almacenamiento de archivos
+### 5.15. Preparar almacenamiento de archivos
 
 Ejecutar:
 
@@ -677,7 +627,7 @@ php artisan storage:link
 
 Si dice que el enlace ya existe, no hay problema.
 
-### 5.17. Probar que Laravel esta bien instalado
+### 5.16. Probar que Laravel esta bien instalado
 
 Ejecutar:
 
@@ -691,7 +641,7 @@ Tambien se pueden correr las pruebas:
 php artisan test
 ```
 
-### 5.18. Levantar la API
+### 5.17. Levantar la API
 
 Ejecutar:
 
@@ -709,7 +659,7 @@ No cierres esa terminal mientras estes usando la API.
 
 Abrir otra terminal si necesitas ejecutar otros comandos.
 
-### 5.19. Probar la API en el navegador o Postman
+### 5.18. Probar la API en el navegador o Postman
 
 Abrir:
 
@@ -729,13 +679,12 @@ En Postman:
 Accept: application/json
 ```
 
-### 5.20. Orden exacto de comandos para una laptop nueva
+### 5.19. Orden exacto de comandos para una laptop nueva
 
 Desde la raiz del proyecto:
 
 ```bash
 composer install
-npm install
 cp .env.example .env
 php artisan key:generate
 php artisan optimize:clear
@@ -749,7 +698,6 @@ En Windows PowerShell, cambiar solo el comando de copiar `.env`:
 
 ```powershell
 composer install
-npm install
 Copy-Item .env.example .env
 php artisan key:generate
 php artisan optimize:clear
@@ -1036,12 +984,6 @@ Levantar API:
 php artisan serve
 ```
 
-Levantar Vite:
-
-```bash
-npm run dev
-```
-
 Ver rutas:
 
 ```bash
@@ -1211,21 +1153,6 @@ Windows:
 - Verificar que la carpeta no este en modo solo lectura.
 - Evitar ejecutar el proyecto dentro de carpetas protegidas del sistema.
 
-### Error: `Vite manifest not found`
-
-Compilar assets:
-
-```bash
-npm install
-npm run build
-```
-
-Durante desarrollo tambien se puede ejecutar:
-
-```bash
-npm run dev
-```
-
 ### Error: login responde 503
 
 La API externa de usuarios no esta disponible o `USERS_API_URL` esta mal.
@@ -1260,7 +1187,6 @@ Estos son los comandos principales para una instalacion nueva:
 
 ```bash
 composer install
-npm install
 cp .env.example .env
 php artisan key:generate
 php artisan migrate
