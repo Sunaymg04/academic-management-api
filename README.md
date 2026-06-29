@@ -144,8 +144,8 @@ MANUAL_INSTALACION.md
 Clone the repository:
 
 ```bash
-git clone https://github.com/dayanarojasdrp/api-laravel.git
-cd api-laravel
+git clone https://github.com/Sunaymg04/academic-management-api.git
+cd academic-management-api
 ```
 
 Install dependencies:
