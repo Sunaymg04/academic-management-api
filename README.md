@@ -233,4 +233,28 @@ The system addresses issues such as:
 
 ##  Author
 
-Developed by Dayana Rojas
+Developed by Dayana Rojas & Suany Daniela Medina Guevara
+## My Contribution
+
+I worked on the **Study Plan Modification Management** module, developed as part of my Informatic Engineering diploma thesis at the Universidad Central “Marta Abreu” de Las Villas.
+
+My contribution focused on the analysis, design, implementation and validation of the workflows related to the modification of academic study plans. This included the management of study plan information, modification requests, version tracking, approval and rejection processes, and the integration of academic data used by the system.
+
+Main contributions:
+
+* Implemented functionalities related to the creation, editing, submission and review of study plan modification requests.
+* Integrated the module with academic entities such as faculties, departments, careers, curricula, subjects and study plans.
+* Developed user workflows for different roles involved in the modification process.
+* Supported the approval and rejection process for modification requests.
+* Worked on the traceability of changes and request status updates.
+* Integrated the frontend with the shared Laravel backend API and MySQL database.
+* Participated in functional testing to validate the main system workflows.
+* Documented the system behavior as part of the diploma thesis and user manual.
+## Study Plan Modification Management Module
+
+In addition to the general academic management functionalities, this backend also supports the **Study Plan Modification Management** module, developed as part of a Computer Engineering diploma thesis at the Universidad Central “Marta Abreu” de Las Villas.
+
+This module uses the shared academic data managed by the backend, including universities, faculties, departments, careers, curricula, subjects and study plans. Based on this information, the system allows the management of modification requests related to academic study plans, supporting institutional workflows where different users and roles participate in the review and validation process.
+
+The module is focused on improving the organization, traceability and control of study plan modification processes by integrating them into the same academic management ecosystem.
+
